@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "FeatherWing")(type Legacy)(uri "$(KIPRJMOD)/FeatherWing.mod")(options "")(descr ""))
+)
