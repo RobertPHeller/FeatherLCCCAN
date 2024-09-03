@@ -1,3 +1,4 @@
 (fp_lib_table
-  (lib (name "FeatherWing")(type Legacy)(uri "$(KIPRJMOD)/FeatherWing.mod")(options "")(descr ""))
+  (lib (name "FeatherWing")(type "Legacy")(uri "$(KIPRJMOD)/FeatherWing.mod")(options "")(descr ""))
+  (lib (name "RJ45")(type "Legacy")(uri "$(KIPRJMOD)/RJ45-8N-S.mod")(options "")(descr ""))
 )
