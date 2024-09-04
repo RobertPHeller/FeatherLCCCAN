@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <240903.2226>
+//  Last Modified : <240903.2257>
 //
 //  Description	
 //
@@ -125,6 +125,10 @@ extern const SimpleNodeStaticValues SNIP_STATIC_DATA =
     SNIP_SW_VERSION
 };
 
+/// Modify this value every time the EEPROM needs to be cleared on the node
+/// after an update.
+static constexpr uint16_t CANONICAL_VERSION = CDI_VERSION;
+
 } // namespace openlcb
 
 
@@ -239,7 +243,7 @@ void app_main()
                                                    (uint8_t)CONFIG_OLCB_WIFI_MODE, /* uplink / hub mode */
                                                    nvs.hostname_prefix());
 #endif
-    esp32networkhealth::FactoryResetHelper factory_reset_helper();
+    esp32networkhealth::FactoryResetHelper factory_reset_helper;
     LOG(INFO, "[MAIN] FactoryResetHelper allocated");
     healthmonitor::HealthMonitor health_mon(stack.service());
     LOG(INFO, "[MAIN] HealthMonitor allocated");
