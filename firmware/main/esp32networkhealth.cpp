@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <240903.2257>
+//  Last Modified : <240904.1425>
 //
 //  Description	
 //
@@ -76,6 +76,8 @@ static const char rcsid[] = "@(#) : $Id$";
 #include <openlcb/SimpleStack.hxx>
 #include <utils/constants.hxx>
 #include <utils/format_utils.hxx>
+
+#include "NetworkHealthScan.hxx"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Increase the CAN RX frame buffer size to reduce overruns when there is high
@@ -247,6 +249,8 @@ void app_main()
     LOG(INFO, "[MAIN] FactoryResetHelper allocated");
     healthmonitor::HealthMonitor health_mon(stack.service());
     LOG(INFO, "[MAIN] HealthMonitor allocated");
+    NetworkHealthScan::NetworkHealthScan(stack.node(),stack.service(),
+                                         cfg.seg().scanConfig());
     LOG(INFO, "[MAIN] config file size is %d",openlcb::CONFIG_FILE_SIZE);
     // Create config file and initiate factory reset if it doesn't exist or is
     // otherwise corrupted.

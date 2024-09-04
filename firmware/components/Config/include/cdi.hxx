@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Jun 25 09:33:40 2022
-//  Last Modified : <240903.2016>
+//  Last Modified : <240904.1337>
 //
 //  Description	
 //
@@ -52,6 +52,8 @@
 #include "openlcb/MemoryConfig.hxx"
 #include "Revision.hxxout"
 
+#include "NetworkHealthScanConfig.hxx"
+
 namespace esp32networkhealth
 {
 
@@ -64,6 +66,8 @@ CDI_GROUP(IoBoard, Segment(openlcb::MemoryConfigDefs::SPACE_CONFIG),
 /// Each entry declares the name of the current entry, then the type and then
 /// optional arguments list.
 CDI_GROUP_ENTRY(internal_config, openlcb::InternalConfigData);
+CDI_GROUP_ENTRY(scanConfig, NetworkHealthScan::NetworkHealthScanConfig, 
+                Name("Scan Config"));
 #ifdef CONFIG_ESP32_WIFI_ENABLED
 CDI_GROUP_ENTRY(olbcwifi, openmrn_arduino::WiFiConfiguration, Name("OLBC WiFi Configuration"));
 #endif
