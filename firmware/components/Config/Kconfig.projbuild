@@ -128,10 +128,10 @@ menu "WiFi Configuration"
 
     config WIFI_HOSTNAME_PREFIX
         string "Hostname prefix"
-        default "esp32octbuffer_"
+        default "esp32nethealth_"
         help
             The OpenLCB node identifier will be appended to this value, ie:
-            esp32octbuffer_0502010300000.
+            esp32nethealth_0502010300000.
             Note: The maximum hostname length is 32 characters.
 
     config WIFI_STATION_SSID

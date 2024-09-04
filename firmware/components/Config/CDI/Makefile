@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Wed Sep 21 11:39:10 2022
-#  Last Modified : <240903.2023>
+#  Last Modified : <240903.2238>
 #
 #  Description	
 #
@@ -52,7 +52,7 @@ all: ../include/cdidata.hxx
 
 EXTRAFLAGS=
 
-EXTRAINCLUDES=`../../../../buildscripts/getincludes.tcl ../../../build/build.ninja`
+EXTRAINCLUDES=`../../../../../ESP32-LCC/buildscripts/getincludes.tcl ../../../build/build.ninja`
 
 compile_cdi: ../include/cdi.hxx CompileCdiMain.cxx \
 	../../../sdkconfig ../include/Revision.hxxout
