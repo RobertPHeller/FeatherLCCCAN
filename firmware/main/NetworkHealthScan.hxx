@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 12:44:50 2024
-//  Last Modified : <240904.2157>
+//  Last Modified : <240905.0958>
 //
 //  Description	
 //
@@ -239,6 +239,7 @@ public:
     virtual void factory_reset(int fd) override;
 private:
     static constexpr const char NODEDB[] = "/fs/nodedb";
+    static constexpr const long long BROWSETIMEOUT = MSEC_TO_NSEC(20000);
     friend class NetworkHealthConsumer;
     void browseCallback_(openlcb::NodeID nodeid);
     void resetNodeDB_();
@@ -258,6 +259,7 @@ private:
     NetworkHealthProducer producer_;
     BarrierNotifiable bn_;
     bool needWriteDB_;
+    openlcb::WriteHelper write_helpers[3];
 };
           
           

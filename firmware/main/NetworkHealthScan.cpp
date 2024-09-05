@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <240904.2158>
+//  Last Modified : <240905.1001>
 //
 //  Description	
 //
@@ -46,6 +46,7 @@ static const char rcsid[] = "@(#) : $Id$";
 #include "openlcb/ConfigRepresentation.hxx"
 #include "utils/ConfigUpdateListener.hxx"
 #include "utils/ConfigUpdateService.hxx"
+#include "StringUtils.hxx"
 #include "openlcb/RefreshLoop.hxx"
 #include "openlcb/SimpleStack.hxx"
 #include "executor/Timer.hxx"
@@ -53,6 +54,8 @@ static const char rcsid[] = "@(#) : $Id$";
 #include "openlcb/NodeBrowser.hxx"
 #include "openlcb/SNIPClient.hxx"
 #include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
 #include <stdlib.h>
 #include "utils/logging.h"
 #include <string>
@@ -288,22 +291,134 @@ void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
 
 void NetworkHealthScan::resetNodeDB_()
 {
+    remove(NODEDB);
+    NodeDB_.clear();
+    needWriteDB_ = true;
+    scanNetwork_();
+}
+
+static bool readline_to_string(int fd,string& buffer)
+{
+    char c;
+    int count = 0;
+    buffer = "";
+    while (read(fd,&c,1) > 0)
+    {
+        if (c == '\n') return true;
+        buffer += c;
+        count++;
+    }
+    return count > 0;
 }
 
 void NetworkHealthScan::ReadDB_()
 {
+    NodeDB_.clear();
+    int fd = open(NODEDB,O_RDONLY);
+    if (fd < 0)
+    {
+        needWriteDB_ = true;
+        return;
+    }
+    string nodestring;
+    while (readline_to_string(fd,nodestring))
+    {
+        
+        openlcb::NodeID nodeid = utils::string_to_uint64(nodestring);
+        string manufacturer; readline_to_string(fd,manufacturer);
+        string model; readline_to_string(fd,model);
+        string softwareVersion; readline_to_string(fd,softwareVersion);
+        string hardwareVersion; readline_to_string(fd,hardwareVersion);
+        string name; readline_to_string(fd,name);
+        string description; readline_to_string(fd,description);
+        NodeDB_.insert(
+            std::make_pair(
+                 nodeid,
+                 NetworkNodeDatabaseEntry(nodeid,manufacturer,
+                                          model,softwareVersion,
+                                          hardwareVersion,name,
+                                          description,
+                                          NetworkNodeDatabaseEntry::Missing)));
+    }
+    close(fd);
 }
 
 void NetworkHealthScan::WriteDB_()
 {
+    remove(NODEDB);
+    int fd = open(NODEDB,O_CREAT|O_WRONLY);
+    for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
+    {
+        string nodeidstring = utils::node_id_to_string(it->second.node_id);
+        write(fd,nodeidstring.c_str(),nodeidstring.size());
+        write(fd,"\n",1);
+        write(fd,it->second.manufacturer.c_str(),it->second.manufacturer.size());
+        write(fd,"\n",1);
+        write(fd,it->second.model.c_str(),it->second.model.size());
+        write(fd,"\n",1);
+        write(fd,it->second.softwareVersion.c_str(),it->second.softwareVersion.size());
+        write(fd,"\n",1);
+        write(fd,it->second.hardwareVersion.c_str(),it->second.hardwareVersion.size());
+        write(fd,"\n",1);
+        write(fd,it->second.name.c_str(),it->second.name.size());
+        write(fd,"\n",1);
+        write(fd,it->second.description.c_str(),it->second.description.size());
+        write(fd,"\n",1);
+    }
+    close(fd);
 }
 
 void NetworkHealthScan::scanNetwork_()
 {
+    for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
+    {
+        it->second.status = NetworkNodeDatabaseEntry::Missing;
+    }
+    browser_.refresh();
+    start(BROWSETIMEOUT);
 }
 
 long long NetworkHealthScan::timeout()
 {
+    size_t total = 0;
+    size_t found = 0;
+    size_t missing = 0;
+    size_t added = 0;
+    for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
+    {
+        total++;
+        switch (it->second.status)
+        {
+        case NetworkNodeDatabaseEntry::Missing:
+            missing++;
+            break;
+        case NetworkNodeDatabaseEntry::Found:
+            found++;
+            break;
+        case NetworkNodeDatabaseEntry::New:
+            added++;
+            break;
+        }
+    }
+    bn_.reset(this);
+    if (found == total)
+    {
+        producer_.sendOK(&write_helpers[0],bn_.new_child());
+    }
+    if (missing > 0)
+    {
+        producer_.sendMissing(&write_helpers[1],bn_.new_child());
+    }
+    if (added > 0)
+    {
+        producer_.sendAdded(&write_helpers[2],bn_.new_child());
+    }
+    bn_.maybe_done();
+    if (needWriteDB_)
+    {
+        WriteDB_();
+        needWriteDB_ = false;
+    }
     return NONE;
 }
 
