@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <240904.1657>
+//  Last Modified : <240904.2014>
 //
 //  Description	
 //
@@ -61,6 +61,85 @@ static const char rcsid[] = "@(#) : $Id$";
 
 namespace NetworkHealthScan
 {
+
+void NetworkHealthScan::NetworkHealthConsumer::handle_identify_global(const openlcb::EventRegistryEntry &registry_entry, 
+                                                                      openlcb::EventReport *event, 
+                                                                      BarrierNotifiable *done)
+{
+}
+
+void NetworkHealthScan::NetworkHealthConsumer::handle_identify_consumer(const openlcb::EventRegistryEntry &registry_entry,
+                                      openlcb::EventReport *event,
+                                                                        BarrierNotifiable *done)
+{
+}
+void NetworkHealthScan::NetworkHealthConsumer::handle_event_report(const openlcb::EventRegistryEntry &entry,
+                                 openlcb::EventReport *event,
+                                                                   BarrierNotifiable *done)
+{
+}
+void NetworkHealthScan::NetworkHealthConsumer::register_handler()
+{
+}
+void NetworkHealthScan::NetworkHealthConsumer::unregister_handler()
+{
+}
+void NetworkHealthScan::NetworkHealthConsumer::SendAllConsumersIdentified(openlcb::EventReport *event,
+                                                                          BarrierNotifiable *done)
+{
+}
+void NetworkHealthScan::NetworkHealthConsumer::SendConsumerIdentified(openlcb::EventReport *event,
+                                                                      BarrierNotifiable *done)
+{
+}
+
+
+void NetworkHealthScan::NetworkHealthProducer::handle_identify_global(const openlcb::EventRegistryEntry &registry_entry, 
+                                    openlcb::EventReport *event, 
+                                                                      BarrierNotifiable *done)
+{
+}
+
+void NetworkHealthScan::NetworkHealthProducer::handle_identify_producer(const openlcb::EventRegistryEntry &registry_entry,
+                                      openlcb::EventReport *event, 
+                                                                        BarrierNotifiable *done)
+{
+}
+
+void NetworkHealthScan::NetworkHealthProducer::register_handler()
+{
+}
+void NetworkHealthScan::NetworkHealthProducer::unregister_handler()
+{
+}
+void SendAllProducersIdentified(openlcb::EventReport *event,
+                                BarrierNotifiable *done)
+{
+}
+void NetworkHealthScan::NetworkHealthProducer::SendProducerIdentified(openlcb::EventReport *event,
+                                                                      BarrierNotifiable *done)
+{
+}
+void NetworkHealthScan::NetworkHealthProducer::SendEventReport(openlcb::WriteHelper *helper,
+                             openlcb::EventId event,
+                                                               BarrierNotifiable *done)
+{
+}
+
+ConfigUpdateListener::UpdateAction NetworkHealthScan::apply_configuration(int fd,
+                                             bool initial_load,
+                                                                                  BarrierNotifiable *done)
+{
+    return UPDATED;
+}
+void NetworkHealthScan::factory_reset(int fd)
+{
+}
+void NetworkHealthScan::handle_identify_producer(const openlcb::EventRegistryEntry &registry_entry,
+                                  openlcb::EventReport *event, 
+                                                 BarrierNotifiable *done)
+{
+}
 
 void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
 {
@@ -131,6 +210,23 @@ void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
     {
         found->second.status = NetworkNodeDatabaseEntry::Found;
     }
+}
+
+
+void NetworkHealthScan::resetNodeDB()
+{
+}
+void NetworkHealthScan::ReadDB_()
+{
+}
+
+void NetworkHealthScan::WriteD_B()
+{
+}
+
+NetworkHealthScan::ScanStatus_t NetworkHealthScan::scanNetwork_()
+{
+    return OK;
 }
 
 }

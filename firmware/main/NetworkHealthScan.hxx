@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 12:44:50 2024
-//  Last Modified : <240904.1656>
+//  Last Modified : <240904.1747>
 //
 //  Description	
 //
@@ -103,8 +103,6 @@ struct NetworkNodeDatabaseEntry {
           , status(other.status)
     {
     }
-    void write(int fd);
-    void read(int fd);
 };
 
 
@@ -237,10 +235,10 @@ private:
     void resetNodeDB();
     typedef std::map<openlcb::NodeID,NetworkNodeDatabaseEntry> NodeDB_t;
     NodeDB_t NodeDB_;
-    void ReadDB();
-    void WriteDB();
+    void ReadDB_();
+    void WriteD_B();
     typedef enum {OK=0, MISSING, ADDED} ScanStatus_t;
-    ScanStatus_t scanNetwork();
+    ScanStatus_t scanNetwork_();
     openlcb::Node *node_;
     Service *service_;
     const NetworkHealthScanConfig cfg_;
