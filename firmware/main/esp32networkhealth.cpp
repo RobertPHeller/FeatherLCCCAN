@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <240904.1425>
+//  Last Modified : <240904.2115>
 //
 //  Description	
 //
@@ -250,6 +250,7 @@ void app_main()
     healthmonitor::HealthMonitor health_mon(stack.service());
     LOG(INFO, "[MAIN] HealthMonitor allocated");
     NetworkHealthScan::NetworkHealthScan(stack.node(),stack.service(),
+                                         stack.executor()->active_timers(),
                                          cfg.seg().scanConfig());
     LOG(INFO, "[MAIN] config file size is %d",openlcb::CONFIG_FILE_SIZE);
     // Create config file and initiate factory reset if it doesn't exist or is

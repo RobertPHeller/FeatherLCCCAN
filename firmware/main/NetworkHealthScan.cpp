@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <240904.2014>
+//  Last Modified : <240904.2158>
 //
 //  Description	
 //
@@ -66,31 +66,61 @@ void NetworkHealthScan::NetworkHealthConsumer::handle_identify_global(const open
                                                                       openlcb::EventReport *event, 
                                                                       BarrierNotifiable *done)
 {
+    if (event->dst_node && event->dst_node != node_)
+    {
+        return done->notify();
+    }
+    SendAllConsumersIdentified(event, done);
+    done->maybe_done();
 }
 
 void NetworkHealthScan::NetworkHealthConsumer::handle_identify_consumer(const openlcb::EventRegistryEntry &registry_entry,
-                                      openlcb::EventReport *event,
+                                                                        openlcb::EventReport *event,
                                                                         BarrierNotifiable *done)
 {
+    if (event->dst_node && event->dst_node != node_)
+    {
+        return done->notify();
+    }
+    event->event_write_helper<1>()->WriteAsync(node_,
+                                               openlcb::Defs::MTI_CONSUMER_IDENTIFIED_UNKNOWN,
+                                               openlcb::WriteHelper::global(),
+                                               openlcb::eventid_to_buffer(event->event),
+                                               done);
 }
 void NetworkHealthScan::NetworkHealthConsumer::handle_event_report(const openlcb::EventRegistryEntry &entry,
-                                 openlcb::EventReport *event,
+                                                                   openlcb::EventReport *event,
                                                                    BarrierNotifiable *done)
 {
+    if (event->event == scan_)
+    {
+        parent_->scanNetwork_();
+    }
+    else if (event->event == resetList_)
+    {
+        parent_->resetNodeDB_();
+    }
+    done->notify();
 }
 void NetworkHealthScan::NetworkHealthConsumer::register_handler()
 {
+    openlcb::EventRegistry::instance()->register_handler(
+                openlcb::EventRegistryEntry(this, scan_, 0), 0);
+    openlcb::EventRegistry::instance()->register_handler(
+                openlcb::EventRegistryEntry(this, resetList_, 0), 0);
 }
 void NetworkHealthScan::NetworkHealthConsumer::unregister_handler()
 {
+    openlcb::EventRegistry::instance()->unregister_handler(this);
 }
 void NetworkHealthScan::NetworkHealthConsumer::SendAllConsumersIdentified(openlcb::EventReport *event,
                                                                           BarrierNotifiable *done)
 {
-}
-void NetworkHealthScan::NetworkHealthConsumer::SendConsumerIdentified(openlcb::EventReport *event,
-                                                                      BarrierNotifiable *done)
-{
+    openlcb::Defs::MTI mti = openlcb::Defs::MTI_CONSUMER_IDENTIFIED_UNKNOWN;
+    event->event_write_helper<3>()->WriteAsync(node_,mti,
+           openlcb::WriteHelper::global(), openlcb::eventid_to_buffer(scan_), done->new_child());
+    event->event_write_helper<4>()->WriteAsync(node_,mti,
+           openlcb::WriteHelper::global(), openlcb::eventid_to_buffer(resetList_), done->new_child());
 }
 
 
@@ -98,46 +128,89 @@ void NetworkHealthScan::NetworkHealthProducer::handle_identify_global(const open
                                     openlcb::EventReport *event, 
                                                                       BarrierNotifiable *done)
 {
+    if (event->dst_node && event->dst_node != node_)
+    {
+        return done->notify();
+    }
+    SendAllProducersIdentified(event, done);
+    done->maybe_done();
 }
 
 void NetworkHealthScan::NetworkHealthProducer::handle_identify_producer(const openlcb::EventRegistryEntry &registry_entry,
                                       openlcb::EventReport *event, 
                                                                         BarrierNotifiable *done)
 {
+    if (event->dst_node && event->dst_node != node_)
+    {
+        return done->notify();
+    }
+    event->event_write_helper<1>()->WriteAsync(node_,
+                                               openlcb::Defs::MTI_PRODUCER_IDENTIFIED_UNKNOWN,
+                                               openlcb::WriteHelper::global(),
+                                               openlcb::eventid_to_buffer(event->event),
+                                               done);
 }
 
 void NetworkHealthScan::NetworkHealthProducer::register_handler()
 {
+    openlcb::EventRegistry::instance()->register_handler(
+                openlcb::EventRegistryEntry(this, scanOK_, 0), 0);
+    openlcb::EventRegistry::instance()->register_handler(
+                openlcb::EventRegistryEntry(this, scanMissing_, 0), 0);
+    openlcb::EventRegistry::instance()->register_handler(
+                openlcb::EventRegistryEntry(this, scanAdded_, 0), 0);
 }
 void NetworkHealthScan::NetworkHealthProducer::unregister_handler()
 {
+    openlcb::EventRegistry::instance()->unregister_handler(this);
 }
-void SendAllProducersIdentified(openlcb::EventReport *event,
-                                BarrierNotifiable *done)
+void NetworkHealthScan::NetworkHealthProducer::SendAllProducersIdentified(openlcb::EventReport *event,
+                                                                          BarrierNotifiable *done)
 {
-}
-void NetworkHealthScan::NetworkHealthProducer::SendProducerIdentified(openlcb::EventReport *event,
-                                                                      BarrierNotifiable *done)
-{
+    openlcb::Defs::MTI mti = openlcb::Defs::MTI_PRODUCER_IDENTIFIED_UNKNOWN;
+    event->event_write_helper<2>()->WriteAsync(node_,mti,
+         openlcb::WriteHelper::global(), openlcb::eventid_to_buffer(scanOK_), done->new_child());
+    event->event_write_helper<3>()->WriteAsync(node_,mti,
+         openlcb::WriteHelper::global(), openlcb::eventid_to_buffer(scanMissing_), done->new_child());
+    event->event_write_helper<4>()->WriteAsync(node_,mti,
+         openlcb::WriteHelper::global(), openlcb::eventid_to_buffer(scanAdded_), done->new_child());
+    
 }
 void NetworkHealthScan::NetworkHealthProducer::SendEventReport(openlcb::WriteHelper *helper,
-                             openlcb::EventId event,
+                                                               openlcb::EventId event,
                                                                BarrierNotifiable *done)
 {
+    helper->WriteAsync(node_,  openlcb::Defs::MTI_EVENT_REPORT, 
+                       openlcb::WriteHelper::global(), 
+                       openlcb::eventid_to_buffer(event), done);
 }
 
 ConfigUpdateListener::UpdateAction NetworkHealthScan::apply_configuration(int fd,
-                                             bool initial_load,
-                                                                                  BarrierNotifiable *done)
+                                                                          bool initial_load,
+                                                                          BarrierNotifiable *done)
 {
-    return UPDATED;
+    UpdateAction result = UPDATED;
+    AutoNotify n(done);
+    openlcb::EventId cfg_scan = cfg_.scan().read(fd);
+    openlcb::EventId cfg_resetList = cfg_.resetList().read(fd);
+    openlcb::EventId cfg_scanOK = cfg_.scanOK().read(fd);
+    openlcb::EventId cfg_scanMissing = cfg_.scanMissing().read(fd);
+    openlcb::EventId cfg_scanAdded = cfg_.scanAdded().read(fd);
+    if (consumer_.eventsChanged(cfg_scan,cfg_resetList))
+    {
+        consumer_.~NetworkHealthConsumer();
+        new (&consumer_) NetworkHealthConsumer(node_,this,cfg_scan,cfg_resetList);
+        result = REINIT_NEEDED; // Causes events identify.
+    }
+    if (producer_.eventsChanged(cfg_scanOK,cfg_scanMissing,cfg_scanAdded))
+    {
+        producer_.~NetworkHealthProducer();
+        new (&producer_) NetworkHealthProducer(node_,this,cfg_scanOK,cfg_scanMissing,cfg_scanAdded);
+        result = REINIT_NEEDED; // Causes events identify.
+    }
+    return result;
 }
 void NetworkHealthScan::factory_reset(int fd)
-{
-}
-void NetworkHealthScan::handle_identify_producer(const openlcb::EventRegistryEntry &registry_entry,
-                                  openlcb::EventReport *event, 
-                                                 BarrierNotifiable *done)
 {
 }
 
@@ -213,20 +286,25 @@ void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
 }
 
 
-void NetworkHealthScan::resetNodeDB()
+void NetworkHealthScan::resetNodeDB_()
 {
 }
+
 void NetworkHealthScan::ReadDB_()
 {
 }
 
-void NetworkHealthScan::WriteD_B()
+void NetworkHealthScan::WriteDB_()
 {
 }
 
-NetworkHealthScan::ScanStatus_t NetworkHealthScan::scanNetwork_()
+void NetworkHealthScan::scanNetwork_()
 {
-    return OK;
+}
+
+long long NetworkHealthScan::timeout()
+{
+    return NONE;
 }
 
 }

@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 12:44:50 2024
-//  Last Modified : <240904.1747>
+//  Last Modified : <240904.2157>
 //
 //  Description	
 //
@@ -107,7 +107,7 @@ struct NetworkNodeDatabaseEntry {
 
 
 
-class NetworkHealthScan : public DefaultConfigUpdateListener
+class NetworkHealthScan : public DefaultConfigUpdateListener, public Timer
 {
 private:
     class NetworkHealthConsumer : public openlcb::SimpleEventHandler
@@ -128,6 +128,11 @@ private:
         {
             unregister_handler();
         }
+        bool eventsChanged(openlcb::EventId newscan, 
+                           openlcb::EventId newresetList)
+        {
+            return (newscan != scan_ || newresetList != resetList_);
+        }
         void handle_identify_global(const openlcb::EventRegistryEntry &registry_entry, 
                                     openlcb::EventReport *event, 
                                     BarrierNotifiable *done);
@@ -142,8 +147,6 @@ private:
         void unregister_handler();
         void SendAllConsumersIdentified(openlcb::EventReport *event,
                                         BarrierNotifiable *done);
-        void SendConsumerIdentified(openlcb::EventReport *event,
-                                    BarrierNotifiable *done);
         openlcb::Node *node_;
         NetworkHealthScan *parent_;
         openlcb::EventId scan_;
@@ -169,6 +172,13 @@ private:
         {
             unregister_handler();
         }
+        bool eventsChanged(openlcb::EventId newscanOK, 
+                           openlcb::EventId newscanMissing,
+                           openlcb::EventId newscanAdded)
+        {
+            return (newscanOK != scanOK_ || newscanMissing != scanMissing_ ||
+                    newscanAdded != scanAdded_);
+        }
         void handle_identify_global(const openlcb::EventRegistryEntry &registry_entry, 
                                     openlcb::EventReport *event, 
                                     BarrierNotifiable *done);
@@ -193,8 +203,6 @@ private:
         void unregister_handler();
         void SendAllProducersIdentified(openlcb::EventReport *event,
                                         BarrierNotifiable *done);
-        void SendProducerIdentified(openlcb::EventReport *event,
-                                    BarrierNotifiable *done);
         void SendEventReport(openlcb::WriteHelper *helper,
                              openlcb::EventId event,
                              BarrierNotifiable *done);
@@ -207,8 +215,10 @@ private:
     };
 public:
     NetworkHealthScan(openlcb::Node *node, Service *service, 
+                      ActiveTimers *timers,
                       const NetworkHealthScanConfig &cfg)
-                : node_(node)
+                : Timer(timers)
+          , node_(node)
           , service_(service)
           , cfg_(cfg)
           , browser_(node, std::bind(&NetworkHealthScan::browseCallback_,
@@ -216,7 +226,9 @@ public:
           , snipClient_(service)
           , consumer_(node,this,0,0)
           , producer_(node,this,0,0,0)
+          , needWriteDB_(false)
     {
+        ReadDB_();
     }
     ~NetworkHealthScan() 
     {
@@ -225,20 +237,18 @@ public:
                                              bool initial_load,
                                              BarrierNotifiable *done) override;
     virtual void factory_reset(int fd) override;
-    void handle_identify_producer(const openlcb::EventRegistryEntry &registry_entry,
-                                  openlcb::EventReport *event, 
-                                  BarrierNotifiable *done);
 private:
     static constexpr const char NODEDB[] = "/fs/nodedb";
     friend class NetworkHealthConsumer;
     void browseCallback_(openlcb::NodeID nodeid);
-    void resetNodeDB();
+    void resetNodeDB_();
     typedef std::map<openlcb::NodeID,NetworkNodeDatabaseEntry> NodeDB_t;
     NodeDB_t NodeDB_;
     void ReadDB_();
-    void WriteD_B();
+    void WriteDB_();
     typedef enum {OK=0, MISSING, ADDED} ScanStatus_t;
-    ScanStatus_t scanNetwork_();
+    void scanNetwork_();
+    long long timeout() override;
     openlcb::Node *node_;
     Service *service_;
     const NetworkHealthScanConfig cfg_;
@@ -246,6 +256,8 @@ private:
     openlcb::SNIPClient snipClient_;
     NetworkHealthConsumer consumer_;
     NetworkHealthProducer producer_;
+    BarrierNotifiable bn_;
+    bool needWriteDB_;
 };
           
           
