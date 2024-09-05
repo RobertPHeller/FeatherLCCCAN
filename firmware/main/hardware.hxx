@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sun Jan 15 16:13:22 2023
-//  Last Modified : <240903.2229>
+//  Last Modified : <240905.1055>
 //
 //  Description	
 //
@@ -51,10 +51,10 @@
 
 /// GPIO Pin connected to the TWAI (CAN) Transceiver RX pin.
 // ADC2_CHANNEL_0
-static constexpr gpio_num_t CONFIG_TWAI_RX_PIN = GPIO_NUM_6;
+static constexpr gpio_num_t CONFIG_TWAI_RX_PIN = GPIO_NUM_12;
 
 /// GPIO Pin connected to the TWAI (CAN) Transceiver TX pin.
-static constexpr gpio_num_t CONFIG_TWAI_TX_PIN = GPIO_NUM_5;
+static constexpr gpio_num_t CONFIG_TWAI_TX_PIN = GPIO_NUM_11;
 
 
 
