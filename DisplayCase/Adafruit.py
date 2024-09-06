@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Aug 13 18:16:55 2024
-#  Last Modified : <240906.1843>
+#  Last Modified : <240906.1938>
 #
 #  Description	
 #
@@ -144,19 +144,19 @@ class AdafruitTFTFeatherWing(object):
 
 class AdafruitFeather(object):
     #__metaclass__ = ABCMeta
-    __p1=Base.Vector(2.54,0,0)
-    __p2=Base.Vector(48.26,0,0)
+    __p1=Base.Vector(0,2.54,0)
+    __p2=Base.Vector(0,48.26,0)
     __cornerRad=2.54
-    __c1=Base.Vector(48.26,0,2.54)
-    __p3=Base.Vector(50.8, 0, 2.54)
-    __p4=Base.Vector(50.8, 0, 20.32)
-    __c2=Base.Vector(48.26,0, 20.32)
-    __p5=Base.Vector(48.26,0, 22.86)
-    __p6=Base.Vector(2.54, 0, 22.86)
-    __c3=Base.Vector(2.54, 0, 20.32)
-    __p7=Base.Vector(0, 0, 20.32)
-    __p8=Base.Vector(0, 0, 2.54)
-    __c4=Base.Vector(2.54, 0, 2.54)
+    __c1=Base.Vector(0,48.26,2.54)
+    __p3=Base.Vector(0,50.80, 2.54)
+    __p4=Base.Vector(0,50.80, 20.32)
+    __c2=Base.Vector(0,48.26, 20.32)
+    __p5=Base.Vector(0,48.26, 22.86)
+    __p6=Base.Vector(0,2.54, 22.86)
+    __c3=Base.Vector(0,2.54, 20.32)
+    __p7=Base.Vector(0,0, 20.32)
+    __p8=Base.Vector(0,0, 2.54)
+    __c4=Base.Vector(0, 2.54, 2.54)
     __boardThick=1.6
     def __init__(self,name,origin):
         self.name = name
@@ -168,21 +168,22 @@ class AdafruitFeather(object):
         elist=list()
         elist.append(Part.makeLine(self.origin.add(self.__p1),self.origin.add(self.__p2)))
         elist.append(Part.makeCircle(self.__cornerRad,self.origin.add(self.__c1),\
-                         Base.Vector(0,1,0),0,90))
+                         Base.Vector(1,0,0),270,360))
         elist.append(Part.makeLine(self.origin.add(self.__p3),self.origin.add(self.__p4)))
         elist.append(Part.makeCircle(self.__cornerRad,self.origin.add(self.__c2),\
-                        Base.Vector(0,1,0),270,360))
+                        Base.Vector(1,0,0),0,90))
         elist.append(Part.makeLine(self.origin.add(self.__p5),self.origin.add(self.__p6)))
         elist.append(Part.makeCircle(self.__cornerRad,self.origin.add(self.__c3),\
-                        Base.Vector(0,1,0),180,270))
+                        Base.Vector(1,0,0),90,180))
         elist.append(Part.makeLine(self.origin.add(self.__p7),self.origin.add(self.__p8)))
         elist.append(Part.makeCircle(self.__cornerRad,self.origin.add(self.__c4),\
-                        Base.Vector(0,1,0),90,180))
+                        Base.Vector(1,0,0),180,270))
         #boardOutline=Part.makeCompound(elist)
+        #self.board=boardOutline.extrude(Base.Vector(self.__boardThick,0,0))
         elist = Part.__sortEdges__(elist)
         boardOutline=Part.Wire(elist)
         boardFace=Part.Face(boardOutline)
-        self.board=boardFace.extrude(Base.Vector(0,self.__boardThick,0))
+        self.board=boardFace.extrude(Base.Vector(self.__boardThick,0,0))
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -197,7 +198,9 @@ if __name__ == '__main__':
     if "Display" in App.listDocuments().keys():
         App.closeDocument("Display")
     doc = App.newDocument("Display")
-    feather=AdafruitFeather("board",Base.Vector(0,0,0))
+    display=AdafruitTFTFeatherWing("display",Base.Vector(0,0,0))
+    display.show(doc)
+    feather=AdafruitFeather("board",Base.Vector(1.6+7.37,39.7-5.08,17.526+(2.54*1.75)))
     feather.show(doc)
     Gui.activeDocument().activeView().viewLeft()
     Gui.SendMsgToActiveView("ViewFit")
