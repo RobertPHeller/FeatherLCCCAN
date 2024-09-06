@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Aug 13 18:16:55 2024
-#  Last Modified : <240906.1834>
+#  Last Modified : <240906.1843>
 #
 #  Description	
 #
@@ -179,13 +179,10 @@ class AdafruitFeather(object):
         elist.append(Part.makeCircle(self.__cornerRad,self.origin.add(self.__c4),\
                         Base.Vector(0,1,0),90,180))
         #boardOutline=Part.makeCompound(elist)
-        wlist=list()
-        for e in elist:
-            wlist.append(Part.Wire(e))
-        #boardOutline=Part.makeCompound(wlist)
-        #boardFace=Part.Face(wlist)
-        #boardFace=Part.makeFace(elist,'Part::FaceMakerSimple')
-        self.board=boardOutline.extrude(Base.Vector(0,self.__boardThick,0))
+        elist = Part.__sortEdges__(elist)
+        boardOutline=Part.Wire(elist)
+        boardFace=Part.Face(boardOutline)
+        self.board=boardFace.extrude(Base.Vector(0,self.__boardThick,0))
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
