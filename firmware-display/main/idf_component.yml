@@ -1,0 +1,13 @@
+dependencies:
+  OpenMRNIDF:
+    version: idf-v5
+    git: https://github.com/atanisoft/OpenMRNIDF.git
+  NVSManager:
+    path: ../../../ESP32-LCC/CommonComponents/NVSManager
+  FS:
+    path: ../../../ESP32-LCC/CommonComponents/FS
+  HealthMonitor:
+    path: ../../../ESP32-LCC/CommonComponents/HealthMonitor
+  RebootHelpers:
+    path: ../../../ESP32-LCC/CommonComponents/RebootHelpers
+
