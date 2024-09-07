@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Aug 13 18:16:55 2024
-#  Last Modified : <240907.1212>
+#  Last Modified : <240907.1715>
 #
 #  Description	
 #
@@ -42,7 +42,7 @@
 
 
 import FreeCAD as App
-import Part
+import Part, Mesh
 from FreeCAD import Base
 
 import os
@@ -174,12 +174,20 @@ class AdafruitFeather(object):
     __SPinCount=12
     __PinDelta=Base.Vector(0,2.54,0)
     __PinRad=.5
+    __USB_CutRad=3
+    __USB_Z0 = 7.146478+1.5
+    __USB_Z1 = 16.052787-1.5
+    __USB_X0 = 3.346186
+    __USB_XA = 0.346186
+    __USB_XB = 6.346186
     def __init__(self,name,origin):
         self.name = name
         if not isinstance(origin,Base.Vector):
             raise RuntimeError("origin is not a Vector")
         self.origin = origin
         self.makeBoard()
+        self.makeHeaders()
+        self.makeUSBConnector()
     def makeBoard(self):
         elist=list()
         elist.append(Part.makeLine(self.origin.add(self.__p1),self.origin.add(self.__p2)))
@@ -235,6 +243,7 @@ class AdafruitFeather(object):
         self.__center=self.origin.add(Base.Vector(0,self.__BoardLength/2,\
                                                   self.__BoardWidth/2))
         self.board=board.rotate(self.__center,Base.Vector(1,0,0),180)
+    def makeHeaders(self):
         shorthead = Mesh.read(os.path.join(os.path.dirname(__file__),\
                               "PinSocket_1x12_P254mm_Vertical.smf"))
         shorthead.rotate(0,3.14159/2,0)
@@ -249,6 +258,39 @@ class AdafruitFeather(object):
                            self.origin.y+44.3725,\
                            self.origin.z+21.625)
         self.longhead = longhead
+    def makeUSBConnector(self):
+        usbC = Mesh.read(os.path.join(os.path.dirname(__file__),\
+                        "USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal.smf"))
+        usbC.translate(4.451228,3.634496,0)
+        usbC.rotate(0,0,3.14159)
+        usbC.rotate(0,3.14159/2,0)
+        usbC.translate(self.origin.x+self.__boardThick,\
+                       self.origin.y+50.8+1.457,\
+                       self.origin.z+15.75-8.620426)
+        self.usbC = usbC
+    def USB_Cutout(self,Y0,Thick):
+        elist=list()
+        oXAZ0 = self.origin.add(Base.Vector(self.__USB_XA,0,self.__USB_Z0))
+        oXAZ1 = self.origin.add(Base.Vector(self.__USB_XA,0,self.__USB_Z1))
+        elist.append(Part.makeLine(Base.Vector(oXAZ0.x,Y0,oXAZ0.z),\
+                                   Base.Vector(oXAZ1.x,Y0,oXAZ1.z)))
+        oXBZ0 = self.origin.add(Base.Vector(self.__USB_XB,0,self.__USB_Z0))
+        oXBZ1 = self.origin.add(Base.Vector(self.__USB_XB,0,self.__USB_Z1))
+        elist.append(Part.makeLine(Base.Vector(oXBZ0.x,Y0,oXBZ0.z),\
+                                   Base.Vector(oXBZ1.x,Y0,oXBZ1.z)))
+        oX0Z0 = self.origin.add(Base.Vector(self.__USB_X0,0,self.__USB_Z0))
+        elist.append(Part.makeCircle(self.__USB_CutRad,\
+                                     Base.Vector(oX0Z0.x,Y0,oX0Z0.z),\
+                                     Base.Vector(0,1,0),0,180))
+        oX0Z1 = self.origin.add(Base.Vector(self.__USB_X0,0,self.__USB_Z1))
+        elist.append(Part.makeCircle(self.__USB_CutRad,\
+                                     Base.Vector(oX0Z1.x,Y0,oX0Z1.z),\
+                                     Base.Vector(0,1,0),180,360))
+        elist = Part.__sortEdges__(elist)
+        cutoutOutline=Part.Wire(elist)
+        cutoutFace=Part.Face(cutoutOutline)
+        cutout=cutoutFace.extrude(Base.Vector(0,Thick,0))
+        return cutout
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -264,6 +306,10 @@ class AdafruitFeather(object):
         obj.Mesh = self.longhead
         obj.Label=self.name+'_longhead'
         obj.ViewObject.ShapeColor=tuple([0.0,1.0,0.0])
+        obj = doc.addObject("Mesh::Feature",self.name+'_usbC')
+        obj.Mesh = self.usbC
+        obj.Label=self.name+'_usbC'
+        obj.ViewObject.ShapeColor=tuple([0.8,0.8,0.8])
 
 
 if __name__ == '__main__':
@@ -271,9 +317,10 @@ if __name__ == '__main__':
         App.closeDocument("Display")
     doc = App.newDocument("Display")
     display=AdafruitTFTFeatherWing("display",Base.Vector(0,0,0))
-    display.show(doc)
-    feather=AdafruitFeather("board",Base.Vector(1.6+7.37,39.7-5.08,17.526+(2.54*1.75)))
+    #display.show(doc)
+    feather=AdafruitFeather("board",Base.Vector(1.6+7.37,39.7-5.08,\
+                                                17.526+(2.54*1.75)))
     feather.show(doc)
-    Gui.activeDocument().activeView().viewLeft()
+    Gui.activeDocument().activeView().viewRight()
     Gui.SendMsgToActiveView("ViewFit")
     

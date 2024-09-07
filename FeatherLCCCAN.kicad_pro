@@ -332,7 +332,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "FeatherWing.kicad_pro",
+    "filename": "FeatherLCCCAN.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -366,7 +366,7 @@
       "idf": "",
       "netlist": "FeatherWing.net",
       "specctra_dsn": "",
-      "step": "",
+      "step": "FeatherLCCCAN.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""
