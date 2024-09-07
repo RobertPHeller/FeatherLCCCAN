@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Aug 13 18:16:55 2024
-#  Last Modified : <240906.1938>
+#  Last Modified : <240906.2329>
 #
 #  Description	
 #
@@ -158,6 +158,22 @@ class AdafruitFeather(object):
     __p8=Base.Vector(0,0, 2.54)
     __c4=Base.Vector(0, 2.54, 2.54)
     __boardThick=1.6
+    __XHoleSpacing=(1.8*25.4)
+    __BoardLength=(2*25.4)
+    __ZHoleSpacing=(.75*25.4)
+    __BoardWidth=(.9*25.4)
+    __H1=Base.Vector(0, 2.54, 2.54)
+    __H2=Base.Vector(0, 2.54, 20.32)
+    __H12Rad=1.25
+    __H3=Base.Vector(0, 48.26, 1.8415)
+    __H4=Base.Vector(0, 48.26, 20.955)
+    __H34Rad=0.5754
+    __PinL1=Base.Vector(0, 6.35, 1.27)
+    __LPinCount=16
+    __PinS1=Base.Vector(0,16.51, 21.59)
+    __SPinCount=12
+    __PinDelta=Base.Vector(0,2.54,0)
+    __PinRad=.5
     def __init__(self,name,origin):
         self.name = name
         if not isinstance(origin,Base.Vector):
@@ -183,7 +199,42 @@ class AdafruitFeather(object):
         elist = Part.__sortEdges__(elist)
         boardOutline=Part.Wire(elist)
         boardFace=Part.Face(boardOutline)
-        self.board=boardFace.extrude(Base.Vector(self.__boardThick,0,0))
+        board=boardFace.extrude(Base.Vector(self.__boardThick,0,0))
+        H1 = Part.Face(Part.Wire(Part.makeCircle(self.__H12Rad,\
+                                                 self.origin.add(self.__H1),\
+                                                 Base.Vector(1,0,0))))\
+                      .extrude(Base.Vector(self.__boardThick,0,0))
+        board=board.cut(H1)
+        H2 = Part.Face(Part.Wire(Part.makeCircle(self.__H12Rad,\
+                                                 self.origin.add(self.__H2),\
+                                                 Base.Vector(1,0,0))))\
+                      .extrude(Base.Vector(self.__boardThick,0,0))
+        board=board.cut(H2)
+        H3 = Part.Face(Part.Wire(Part.makeCircle(self.__H34Rad,\
+                                                 self.origin.add(self.__H3),\
+                                                 Base.Vector(1,0,0))))\
+                      .extrude(Base.Vector(self.__boardThick,0,0))
+        board=board.cut(H3)
+        H4 = Part.Face(Part.Wire(Part.makeCircle(self.__H34Rad,\
+                                                 self.origin.add(self.__H4),\
+                                                 Base.Vector(1,0,0))))\
+                      .extrude(Base.Vector(self.__boardThick,0,0))
+        board=board.cut(H4)
+        pinl=self.origin.add(self.__PinL1)
+        for i in range(0,self.__LPinCount):
+            pin=Part.Face(Part.Wire(Part.makeCircle(self.__PinRad,pinl,Base.Vector(1,0,0))))\
+                        .extrude(Base.Vector(self.__boardThick,0,0))
+            board=board.cut(pin)
+            pinl=pinl.add(self.__PinDelta)
+        pins=self.origin.add(self.__PinS1)
+        for i in range(0,self.__SPinCount):
+            pin=Part.Face(Part.Wire(Part.makeCircle(self.__PinRad,pins,Base.Vector(1,0,0))))\
+                        .extrude(Base.Vector(self.__boardThick,0,0))
+            board=board.cut(pin)
+            pins=pins.add(self.__PinDelta)
+        self.__center=self.origin.add(Base.Vector(0,self.__BoardLength/2,\
+                                                  self.__BoardWidth/2))
+        self.board=board.rotate(center,Base.Vector(1,0,0),180)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
