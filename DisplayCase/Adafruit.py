@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Aug 13 18:16:55 2024
-#  Last Modified : <240906.2329>
+#  Last Modified : <240907.1212>
 #
 #  Description	
 #
@@ -234,7 +234,21 @@ class AdafruitFeather(object):
             pins=pins.add(self.__PinDelta)
         self.__center=self.origin.add(Base.Vector(0,self.__BoardLength/2,\
                                                   self.__BoardWidth/2))
-        self.board=board.rotate(center,Base.Vector(1,0,0),180)
+        self.board=board.rotate(self.__center,Base.Vector(1,0,0),180)
+        shorthead = Mesh.read(os.path.join(os.path.dirname(__file__),\
+                              "PinSocket_1x12_P254mm_Vertical.smf"))
+        shorthead.rotate(0,3.14159/2,0)
+        shorthead.translate(self.origin.x+self.__boardThick,\
+                            self.origin.y+34.2125,\
+                            self.origin.z+1.27)
+        self.shorthead = shorthead
+        longhead = Mesh.read(os.path.join(os.path.dirname(__file__),\
+                              "PinSocket_1x16_P254mm_Vertical.smf"))
+        longhead.rotate(0,3.14159/2,0)
+        longhead.translate(self.origin.x+self.__boardThick,\
+                           self.origin.y+44.3725,\
+                           self.origin.z+21.625)
+        self.longhead = longhead
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -242,7 +256,14 @@ class AdafruitFeather(object):
         obj.Shape = self.board
         obj.Label=self.name+'_board'
         obj.ViewObject.ShapeColor=tuple([0.0,0.0,0.0])
-
+        obj = doc.addObject("Mesh::Feature",self.name+'_shorthead')
+        obj.Mesh = self.shorthead
+        obj.Label=self.name+'_shorthead'
+        obj.ViewObject.ShapeColor=tuple([1.0,0.0,0.0])
+        obj = doc.addObject("Mesh::Feature",self.name+'_longhead')
+        obj.Mesh = self.longhead
+        obj.Label=self.name+'_longhead'
+        obj.ViewObject.ShapeColor=tuple([0.0,1.0,0.0])
 
 
 if __name__ == '__main__':
