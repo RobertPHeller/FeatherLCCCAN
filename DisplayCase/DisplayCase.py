@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240907.1506>
+#  Last Modified : <240907.2053>
 #
 #  Description	
 #
@@ -92,6 +92,18 @@ class FeatherLCCCAN(object):
                          self.origin.z+20.223)
         
         self.RJ45_2 = RJ45_2
+    def cutRJ45s(self,part):
+        r1BB=self.RJ45_1.BoundBox
+        r1Cube=Part.makeBox(r1BB.XLength,r1BB.YLength,r1BB.ZLength,\
+                            Base.Vector(r1BB.XMin,r1BB.YMin,r1BB.ZMin),\
+                            Base.Vector(0,0,1))
+        part = part.cut(r1Cube)
+        r2BB=self.RJ45_2.BoundBox
+        r2Cube=Part.makeBox(r2BB.XLength,r2BB.YLength,r2BB.ZLength,\
+                            Base.Vector(r2BB.XMin,r2BB.YMin,r2BB.ZMin),\
+                            Base.Vector(0,0,1))
+        part = part.cut(r2Cube)
+        return part
     def makePinHeaders(self):
         shortheader=Mesh.read(os.path.join(os.path.dirname(__file__),\
                               "PinHeader_1x12_p254mm_Vertical.smf"))
@@ -133,15 +145,131 @@ class FeatherLCCCAN(object):
         obj.Label=self.name+'_longheader'
         obj.ViewObject.ShapeColor=tuple([0.0,0.0,0.0])
 
+def printEdge(e,f):
+    print(e)
+    print(e.Curve,file=f)
+    for v in e.Vertexes:
+        print(v.Point,file=f)
+    print(e.FirstParameter,file=f)
+    print(e.LastParameter,file=f)
+
+class Box(object):
+    __InnerLength=97
+    __InnerWidth=62.04
+    __InnerDepth=30
+    __WallThick=3.5
+    __CornerRad=4
+    __YOffset=15.156
+    __USBCutY=85.344
+    def __init__(self,name,origin):
+        self.name = name
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector")
+        self.origin = origin
+        self.display = Adafruit.AdafruitTFTFeatherWing("display",self.origin)
+        self.feather=Adafruit.AdafruitFeather("board",\
+                            self.origin.add(Base.Vector(1.6+7.37,\
+                                                        39.7-5.08,\
+                                                        17.526+(2.54*1.75))))
+        self.featherLCCCAN=FeatherLCCCAN("lccCAN",\
+                            self.origin.add(Base.Vector(((1.6+7.37)*2)+2.155,\
+                                                        39.7-5.08+50.8,\
+                                                        17.65+(2.54*1.78))))
+        self.makeBox()
+    def makeBox(self):
+        outerLength=self.__InnerLength+(self.__WallThick*2)
+        outerWidth=self.__InnerWidth+(self.__WallThick*2)
+        extrude=Base.Vector(-(self.__InnerDepth+self.__WallThick),0,0)
+        baseNorm=Base.Vector(1,0,0)
+        baseOrigin=self.origin.add(Base.Vector(-extrude.x,\
+                                               -self.__YOffset,\
+                                               -self.__WallThick))
+        elist=list()
+        p1=baseOrigin.add(Base.Vector(0,self.__CornerRad,0))
+        p2=baseOrigin.add(Base.Vector(0,outerLength-self.__CornerRad,0))
+        elist.append(Part.makeLine(p1,p2))
+        c1=p2.add(Base.Vector(0,0,self.__CornerRad))
+        elist.append(Part.makeCircle(self.__CornerRad,c1,Base.Vector(1,0,0),\
+                                     270,360))
+        p3=c1.add(Base.Vector(0,self.__CornerRad,0))
+        p4=p3.add(Base.Vector(0,0,outerWidth-self.__CornerRad))
+        elist.append(Part.makeLine(p3,p4))
+        c2=p4.add(Base.Vector(0,-self.__CornerRad,0))
+        elist.append(Part.makeCircle(self.__CornerRad,c2,Base.Vector(1,0,0),\
+                                    0,90))
+        p5=c2.add(Base.Vector(0,0,self.__CornerRad))
+        p6=p5.add(Base.Vector(0,-(outerLength-(2*self.__CornerRad)),0))
+        elist.append(Part.makeLine(p5,p6))
+        c3=p6.add(Base.Vector(0,0,-self.__CornerRad))
+        elist.append(Part.makeCircle(self.__CornerRad,c3,Base.Vector(1,0,0),\
+                                    90,180))
+        p7=c3.add(Base.Vector(0,-self.__CornerRad,0))
+        p8=p7.add(Base.Vector(0,0,-(outerWidth-self.__CornerRad)))
+        elist.append(Part.makeLine(p7,p8))
+        c4=p8.add(Base.Vector(0,self.__CornerRad,0))
+        elist.append(Part.makeCircle(self.__CornerRad,c4,Base.Vector(1,0,0),\
+                                    180,270))
+        elist = Part.__sortEdges__(elist)
+        baseOutline=Part.Wire(elist)
+        baseFace=Part.Face(baseOutline)
+        box=baseFace.extrude(extrude)
+        elist=list()
+        iextrude=extrude.add(Base.Vector(-self.__WallThick,0,0))
+        ip1=p1.add(Base.Vector(-self.__WallThick,\
+                               self.__WallThick,\
+                               self.__WallThick))
+        ip2=p2.add(Base.Vector(-self.__WallThick,\
+                               -self.__WallThick,\
+                               self.__WallThick))
+        
+        elist.append(Part.makeLine(ip1,ip2)) 
+        ic1=ip2.add(Base.Vector(0,0,self.__CornerRad))
+        elist.append(Part.makeCircle(self.__CornerRad,ic1,Base.Vector(1,0,0),\
+                                     270,360))
+        ip3=ic1.add(Base.Vector(0,self.__CornerRad,0))
+        ip4=ip3.add(Base.Vector(0,0,self.__InnerWidth-self.__CornerRad))
+        elist.append(Part.makeLine(ip3,ip4))
+        ic2=ip4.add(Base.Vector(0,-self.__CornerRad,0))
+        elist.append(Part.makeCircle(self.__CornerRad,ic2,Base.Vector(1,0,0),\
+                                     0,90))
+        ip5=ic2.add(Base.Vector(0,0,self.__CornerRad))
+        ip6=ip5.add(Base.Vector(0,-(self.__InnerLength-(2*self.__CornerRad)),0))
+        elist.append(Part.makeLine(ip5,ip6))
+        ic3=ip6.add(Base.Vector(0,0,-self.__CornerRad))
+        elist.append(Part.makeCircle(self.__CornerRad,ic3,Base.Vector(1,0,0),\
+                                     90,180))
+        ip7=ic3.add(Base.Vector(0,-self.__CornerRad,0))
+        ip8=ip7.add(Base.Vector(0,0,-(self.__InnerWidth-self.__CornerRad)))
+        elist.append(Part.makeLine(ip7,ip8))
+        ic4=ip8.add(Base.Vector(0,self.__CornerRad,0))
+        elist.append(Part.makeCircle(self.__CornerRad,ic4,Base.Vector(1,0,0),\
+                                     180,270))
+        elist = Part.__sortEdges__(elist)
+        innerOutline=Part.Wire(elist)
+        innerFace=Part.Face(innerOutline)
+        inner=innerFace.extrude(iextrude)
+        box=box.cut(inner)
+        box=box.cut(self.feather.USB_Cutout(self.__USBCutY,self.__WallThick))
+        box=self.featherLCCCAN.cutRJ45s(box)
+        self.box = box
+    def show(self,doc=None):
+        if doc==None:
+            doc = App.activeDocument()
+        obj = doc.addObject("Part::Feature",self.name+'_box')
+        obj.Shape = self.box
+        obj.Label=self.name+'_box'
+        obj.ViewObject.ShapeColor=tuple([1.0,0.0,0.0])
+        obj.ViewObject.Transparency=50
+        self.display.show(doc)
+        self.feather.show(doc)
+        self.featherLCCCAN.show(doc)
+    
+
 if __name__ == '__main__':
     if "DisplayCase" in App.listDocuments().keys():
         App.closeDocument("DisplayCase")
     doc = App.newDocument("DisplayCase")
-    display = Adafruit.AdafruitTFTFeatherWing("display",Base.Vector(0,0,0))
-    #display.show(doc)
-    feather=Adafruit.AdafruitFeather("board",Base.Vector(1.6+7.37,39.7-5.08,17.526+(2.54*1.75)))
-    feather.show(doc)
-    featherLCCCAN=FeatherLCCCAN("lccCAN",Base.Vector(((1.6+7.37)*2)+2.155,39.7-5.08+50.8,17.65+(2.54*1.78)))
-    featherLCCCAN.show(doc)
+    box=Box("box",Base.Vector(0,0,0))
+    box.show(doc)
     Gui.activeDocument().activeView().viewRear()
     Gui.SendMsgToActiveView("ViewFit")
