@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240908.0939>
+#  Last Modified : <240908.1330>
 #
 #  Description	
 #
@@ -164,6 +164,9 @@ class Box(object):
     __PostRadious=3
     __PostHoleRadious=1.025
     __PostHoleDepth=12.5
+    __LidDip=12.5
+    __LidZ0=3.5
+    __LidZLen=62.04-(3.5*3)
     def __init__(self,name,origin):
         self.name = name
         if not isinstance(origin,Base.Vector):
@@ -179,6 +182,7 @@ class Box(object):
                                                         39.7-5.08+50.8,\
                                                         17.65+(2.54*1.78))))
         self.makeBox()
+        self.makeLid()
     def makeBox(self):
         outerLength=self.__InnerLength+(self.__WallThick*2)
         outerWidth=self.__InnerWidth+(self.__WallThick*2)
@@ -276,6 +280,72 @@ class Box(object):
                                                self.__PostHoleDepth))
         box=self.display.CutBoard(box)
         self.box = box
+    def makeLid(self):
+        outerLength=self.__InnerLength+(self.__WallThick*2)
+        outerWidth=self.__InnerWidth+(self.__WallThick*2)
+        extrude=Base.Vector(-self.__WallThick,0,0)
+        lidNorm=Base.Vector(1,0,0)
+        lidOrigin=self.origin.add(Base.Vector(0,\
+                                               -self.__YOffset,\
+                                               -self.__WallThick))
+        elist=list()
+        p1=lidOrigin.add(Base.Vector(0,self.__CornerRad,0))
+        p2=lidOrigin.add(Base.Vector(0,outerLength-self.__CornerRad,0))
+        elist.append(Part.makeLine(p1,p2))
+        c1=p2.add(Base.Vector(0,0,self.__CornerRad))
+        elist.append(Part.makeCircle(self.__CornerRad,c1,Base.Vector(1,0,0),\
+                                     270,360))
+        p3=c1.add(Base.Vector(0,self.__CornerRad,0))
+        p4=p3.add(Base.Vector(0,0,outerWidth-self.__CornerRad))
+        elist.append(Part.makeLine(p3,p4))
+        c2=p4.add(Base.Vector(0,-self.__CornerRad,0))
+        elist.append(Part.makeCircle(self.__CornerRad,c2,Base.Vector(1,0,0),\
+                                    0,90))
+        p5=c2.add(Base.Vector(0,0,self.__CornerRad))
+        p6=p5.add(Base.Vector(0,-(outerLength-(2*self.__CornerRad)),0))
+        elist.append(Part.makeLine(p5,p6))
+        c3=p6.add(Base.Vector(0,0,-self.__CornerRad))
+        elist.append(Part.makeCircle(self.__CornerRad,c3,Base.Vector(1,0,0),\
+                                    90,180))
+        p7=c3.add(Base.Vector(0,-self.__CornerRad,0))
+        p8=p7.add(Base.Vector(0,0,-(outerWidth-self.__CornerRad)))
+        elist.append(Part.makeLine(p7,p8))
+        c4=p8.add(Base.Vector(0,self.__CornerRad,0))
+        elist.append(Part.makeCircle(self.__CornerRad,c4,Base.Vector(1,0,0),\
+                                    180,270))
+        elist = Part.__sortEdges__(elist)
+        lidOutline=Part.Wire(elist)
+        lidFace=Part.Face(lidOutline)
+        lid=lidFace.extrude(extrude)
+        lid=lid.cut(self.display.ScreenCutout(extrude.x))
+        lid=lid.cut(self.display.MakeMountingHole(0,lidOrigin.x,extrude.x))
+        lid=lid.cut(self.display.MakeMountingHole(1,lidOrigin.x,extrude.x))
+        lid=lid.cut(self.display.MakeMountingHole(2,lidOrigin.x,extrude.x))
+        lid=lid.cut(self.display.MakeMountingHole(3,lidOrigin.x,extrude.x))
+        dipNorm=Base.Vector(0,-1,0)
+        extrude=Base.Vector(0,self.__WallThick,0)
+        elist=list()
+        p1=self.origin.add(Base.Vector(0,-self.__YOffset,self.__LidZ0))
+        p2=p1.add(Base.Vector(self.__LidDip,0,0))
+        elist.append(Part.makeLine(p1,p2))
+        c1=p2.add(Base.Vector(0,0,self.__CornerRad))
+        elist.append(Part.makeCircle(self.__CornerRad,c1,dipNorm,270,360))
+        p3=c1.add(Base.Vector(self.__CornerRad,0,0))
+        p4=p3.add(Base.Vector(0,0,self.__LidZLen))
+        elist.append(Part.makeLine(p3,p4))
+        c2=p4.add(Base.Vector(-self.__CornerRad,0,0))
+        elist.append(Part.makeCircle(self.__CornerRad,c2,dipNorm,0,90))
+        p5=c2.add(Base.Vector(0,0,self.__CornerRad))
+        p6=p5.add(Base.Vector(-self.__LidDip,0,0))
+        elist.append(Part.makeLine(p5,p6))
+        elist.append(Part.makeLine(p6,p1))
+        elist = Part.__sortEdges__(elist)
+        dipOutline=Part.Wire(elist)
+        dipFace=Part.Face(dipOutline)
+        dip=dipFace.extrude(extrude)
+        lid=lid.fuse(dip)
+        self.box=self.box.cut(lid)
+        self.lid=lid
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -283,6 +353,11 @@ class Box(object):
         obj.Shape = self.box
         obj.Label=self.name+'_box'
         obj.ViewObject.ShapeColor=tuple([1.0,0.0,0.0])
+        obj.ViewObject.Transparency=50
+        obj = doc.addObject("Part::Feature",self.name+'_lid')
+        obj.Shape = self.lid
+        obj.Label=self.name+'_lid'
+        obj.ViewObject.ShapeColor=tuple([0.0,0.0,1.0])
         obj.ViewObject.Transparency=50
         self.display.show(doc)
         self.feather.show(doc)
