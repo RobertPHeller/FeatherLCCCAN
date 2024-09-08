@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240908.1444>
+#  Last Modified : <240908.1547>
 #
 #  Description	
 #
@@ -166,7 +166,7 @@ class Box(object):
     __PostHoleDepth=12.5
     __LidDip=12.5
     __LidZ0=3.5
-    __LidZLen=62.04-(3.5*3)
+    __LidZLen=25.4
     def __init__(self,name,origin):
         self.name = name
         if not isinstance(origin,Base.Vector):
