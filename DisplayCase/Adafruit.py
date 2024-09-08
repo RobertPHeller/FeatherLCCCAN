@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Aug 13 18:16:55 2024
-#  Last Modified : <240907.1715>
+#  Last Modified : <240908.0926>
 #
 #  Description	
 #
@@ -110,6 +110,20 @@ class AdafruitTFTFeatherWing(object):
                                                    Base.Vector(1,0,0))))\
                     .extrude(Base.Vector(Xdelta,0,0))
         return hole
+    def MakeStandoff(self,index,X,Xdelta,radius,holerad=0,holedepth=0):
+        orig = Base.Vector(X,self.MountingHoles[index].y,self.MountingHoles[index].z)
+        standoff = Part.Face(Part.Wire(Part.makeCircle(radius,\
+                                                       orig,\
+                                                       Base.Vector(1,0,0))))\
+                    .extrude(Base.Vector(Xdelta,0,0))
+        if holerad > 0:
+            if holedepth==0:
+                holedepth=Xdelta
+            hole = Part.Face(Part.Wire(Part.makeCircle(holerad,\
+                                                       orig,\
+                                                       Base.Vector(1,0,0))))\
+                     .extrude(Base.Vector(holedepth,0,0))
+        return standoff.cut(hole)
     def ScreenCutout(self,DeltaX):
         screenWin,screenHin = self.__ScreenSizeWHInches
         screenYin,screenZin = self.__ScreenOriginYZInches
@@ -117,6 +131,8 @@ class AdafruitTFTFeatherWing(object):
                                      self.origin.add(Base.Vector(0,screenWin*25.4+screenYin*25.4,screenZin*25.4)),\
                                      Base.Vector(1,0,0)).extrude(Base.Vector(DeltaX,0,0))
         return screenCutout
+    def CutBoard(self,part):
+        return part.cut(self.board)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()

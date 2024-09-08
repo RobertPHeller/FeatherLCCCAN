@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240907.2053>
+#  Last Modified : <240908.0939>
 #
 #  Description	
 #
@@ -154,13 +154,16 @@ def printEdge(e,f):
     print(e.LastParameter,file=f)
 
 class Box(object):
-    __InnerLength=97
+    __InnerLength=99
     __InnerWidth=62.04
-    __InnerDepth=30
+    __InnerDepth=33.77
     __WallThick=3.5
     __CornerRad=4
     __YOffset=15.156
     __USBCutY=85.344
+    __PostRadious=3
+    __PostHoleRadious=1.025
+    __PostHoleDepth=12.5
     def __init__(self,name,origin):
         self.name = name
         if not isinstance(origin,Base.Vector):
@@ -251,6 +254,27 @@ class Box(object):
         box=box.cut(inner)
         box=box.cut(self.feather.USB_Cutout(self.__USBCutY,self.__WallThick))
         box=self.featherLCCCAN.cutRJ45s(box)
+        box=box.fuse(self.display.MakeStandoff(0,self.origin.x+1.6,\
+                                               self.__InnerDepth,\
+                                               self.__PostRadious,\
+                                               self.__PostHoleRadious,\
+                                               self.__PostHoleDepth))
+        box=box.fuse(self.display.MakeStandoff(1,self.origin.x+1.6,\
+                                               self.__InnerDepth,\
+                                               self.__PostRadious,\
+                                               self.__PostHoleRadious,\
+                                               self.__PostHoleDepth))
+        box=box.fuse(self.display.MakeStandoff(2,self.origin.x+1.6,\
+                                               self.__InnerDepth,\
+                                               self.__PostRadious,\
+                                               self.__PostHoleRadious,\
+                                               self.__PostHoleDepth))
+        box=box.fuse(self.display.MakeStandoff(3,self.origin.x+1.6,\
+                                               self.__InnerDepth,\
+                                               self.__PostRadious,\
+                                               self.__PostHoleRadious,\
+                                               self.__PostHoleDepth))
+        box=self.display.CutBoard(box)
         self.box = box
     def show(self,doc=None):
         if doc==None:
