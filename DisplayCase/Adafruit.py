@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Aug 13 18:16:55 2024
-#  Last Modified : <240908.0926>
+#  Last Modified : <240908.1543>
 #
 #  Description	
 #
@@ -61,7 +61,6 @@ class AdafruitTFTFeatherWing(object):
     __BoardMountingHolesYZInches = [(.1,.1),(3.26,.1),(3.26,2.5),(.1,2.5)]
     __BoardMountingHolesRad = .06*25.4
     __LongHeaderYZ = (39.7,40.386)
-    __LongHeaderWH = (40.64,8.128)
     __ShortHeaderYZ = (39.7,17.526)
     __ShortHeaderWH = (30.48,8.128)
     __HeaderHeight = 7.37
@@ -91,18 +90,31 @@ class AdafruitTFTFeatherWing(object):
         self.screen = Part.makePlane(screenHin*25.4,screenWin*25.4,\
                                      origin.add(Base.Vector(0,screenWin*25.4+screenYin*25.4,screenZin*25.4)),\
                                      Base.Vector(1,0,0)).extrude(Base.Vector(-self.__ScreenThick,0,0))
+        longHeaderMesh = Mesh.read(os.path.join(os.path.dirname(__file__),\
+                                "PinSocket_2x16_P254mm_Vertical_SMD.smf"))
+        longHeaderMesh.translate(2.54,-20.286259,0)
+        longHeaderMesh.rotate(0,0,3.14159)
+        longHeaderMesh.rotate(0,3.14159/2,0)
         Y,Z = self.__LongHeaderYZ
-        W,H = self.__LongHeaderWH
-        self.longHeader =  Part.makePlane(H,W,\
-                                          origin.add(Base.Vector(self.__BoardThick,Y+W,Z)),\
-                                          Base.Vector(1,0,0))\
-                               .extrude(Base.Vector(self.__HeaderHeight))
+        longHeaderMesh.translate(origin.x+self.__BoardThick,origin.y+Y,origin.z+Z)
+        self.longHeaderMesh=longHeaderMesh
+        shortHeaderMesh = Mesh.read(os.path.join(os.path.dirname(__file__),\
+                                "PinSocket_2x12_P254mm_Vertical_SMD.smf"))
+        shortHeaderMesh.translate(2.54,-15.228524,0)
+        shortHeaderMesh.rotate(0,0,3.14159)
+        shortHeaderMesh.rotate(0,3.14159/2,0)
         Y,Z = self.__ShortHeaderYZ
-        W,H = self.__ShortHeaderWH
-        self.shortHeader =  Part.makePlane(H,W,\
-                                          origin.add(Base.Vector(self.__BoardThick,Y+W,Z)),\
-                                          Base.Vector(1,0,0))\
-                               .extrude(Base.Vector(self.__HeaderHeight))
+        shortHeaderMesh.translate(origin.x+self.__BoardThick,origin.y+Y,origin.z+Z)
+        self.shortHeaderMesh = shortHeaderMesh
+        self.makeMicroSD()
+    def makeMicroSD(self):
+        microSD = Mesh.read(os.path.join(os.path.dirname(__file__),\
+                            "microSD_HC_Hirose_DM3D-SF.smf"))
+        microSD.translate(5.975,5.675,0)
+        microSD.rotate(0,3.14159/2,0)
+        microSD.rotate(3.14159,0,0)
+        microSD.translate(self.__BoardThick,11.349456,12.7)
+        self.microSD = microSD
     def MakeMountingHole(self,index,X,Xdelta):
         holeOrig = Base.Vector(X,self.MountingHoles[index].y,self.MountingHoles[index].z)
         hole = Part.Face(Part.Wire(Part.makeCircle(self.__BoardMountingHolesRad,\
@@ -148,14 +160,18 @@ class AdafruitTFTFeatherWing(object):
         obj.Shape = self.screen
         obj.Label=self.name+'_screen'
         obj.ViewObject.ShapeColor=tuple([0.8,0.8,0.8])
-        obj = doc.addObject("Part::Feature",self.name+'_longHeader')
-        obj.Shape = self.longHeader
+        obj = doc.addObject("Mesh::Feature",self.name+'_longHeader')
+        obj.Mesh=self.longHeaderMesh
         obj.Label=self.name+'_longHeader'
         obj.ViewObject.ShapeColor=tuple([0.2,0.2,0.2])
-        obj = doc.addObject("Part::Feature",self.name+'_shortHeader')
-        obj.Shape = self.shortHeader
+        obj = doc.addObject("Mesh::Feature",self.name+'_shortHeader')
+        obj.Mesh=self.shortHeaderMesh
         obj.Label=self.name+'_shortHeader'
         obj.ViewObject.ShapeColor=tuple([0.2,0.2,0.2])
+        obj = doc.addObject("Mesh::Feature",self.name+'_microSD')
+        obj.Mesh = self.microSD
+        obj.Label=self.name+'_microSD'
+        obj.ViewObject.ShapeColor=tuple([0.8,0.8,0.8])
         
 
 class AdafruitFeather(object):
@@ -333,10 +349,10 @@ if __name__ == '__main__':
         App.closeDocument("Display")
     doc = App.newDocument("Display")
     display=AdafruitTFTFeatherWing("display",Base.Vector(0,0,0))
-    #display.show(doc)
-    feather=AdafruitFeather("board",Base.Vector(1.6+7.37,39.7-5.08,\
-                                                17.526+(2.54*1.75)))
-    feather.show(doc)
+    display.show(doc)
+#    feather=AdafruitFeather("board",Base.Vector(1.6+7.37,39.7-5.08,\
+#                                                17.526+(2.54)))
+#    feather.show(doc)
     Gui.activeDocument().activeView().viewRight()
     Gui.SendMsgToActiveView("ViewFit")
     

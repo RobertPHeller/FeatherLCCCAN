@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240908.1330>
+#  Last Modified : <240908.1444>
 #
 #  Description	
 #
@@ -176,11 +176,11 @@ class Box(object):
         self.feather=Adafruit.AdafruitFeather("board",\
                             self.origin.add(Base.Vector(1.6+7.37,\
                                                         39.7-5.08,\
-                                                        17.526+(2.54*1.75))))
+                                                        17.526+(2.54))))
         self.featherLCCCAN=FeatherLCCCAN("lccCAN",\
                             self.origin.add(Base.Vector(((1.6+7.37)*2)+2.155,\
                                                         39.7-5.08+50.8,\
-                                                        17.65+(2.54*1.78))))
+                                                        17.70+(2.54))))
         self.makeBox()
         self.makeLid()
     def makeBox(self):
