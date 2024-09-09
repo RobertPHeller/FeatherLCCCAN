@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <240904.2115>
+//  Last Modified : <240908.2049>
 //
 //  Description	
 //
@@ -77,7 +77,13 @@ static const char rcsid[] = "@(#) : $Id$";
 #include <utils/constants.hxx>
 #include <utils/format_utils.hxx>
 
+#include "Esp32SPI.hxx"
+#include "Adafruit_HX8357.h"
+#include "freertos_drivers/esp32/Esp32HardwareI2C.hxx"
+#include "Adafruit_TSC2007.h"
+
 #include "NetworkHealthScan.hxx"
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Increase the CAN RX frame buffer size to reduce overruns when there is high
@@ -88,6 +94,10 @@ OVERRIDE_CONST(num_memory_spaces, 6);
 
 esp32networkhealth::ConfigDef cfg(0);
 Esp32HardwareTwai twai(CONFIG_TWAI_RX_PIN, CONFIG_TWAI_TX_PIN);
+Esp32SPI spibus;
+Adafruit_HX8357 display(CONFIG_DCS,DRs_Pin::instance(),nullptr);
+Esp32HardwareI2C i2c("/dev/i2c");
+Adafruit_TSC2007 touchscreen;
 
 namespace openlcb
 {
@@ -198,7 +208,11 @@ void app_main()
     bool reset_events = false;
     bool cleanup_config_tree = false;
     
-    //GpioInit::hw_init();
+    GpioInit::hw_init();
+    spibus.hw_initbus(CONFIG_MOSI,CONFIG_MISO,CONFIG_SCLK);
+    display.begin(&spibus);
+    touchscreen.begin();
+    spibus.mount_sd_card("/sdcard",CONFIG_CardCS);
     
     nvsmanager::NvsManager nvs;
     nvs.init(reset_reason);
@@ -249,9 +263,11 @@ void app_main()
     LOG(INFO, "[MAIN] FactoryResetHelper allocated");
     healthmonitor::HealthMonitor health_mon(stack.service());
     LOG(INFO, "[MAIN] HealthMonitor allocated");
-    NetworkHealthScan::NetworkHealthScan(stack.node(),stack.service(),
-                                         stack.executor()->active_timers(),
-                                         cfg.seg().scanConfig());
+    NetworkHealthScan::NetworkHealthScan 
+          healthScan(stack.node(),
+                     stack.service(),
+                     stack.executor()->active_timers(),
+                     cfg.seg().scanConfig());
     LOG(INFO, "[MAIN] config file size is %d",openlcb::CONFIG_FILE_SIZE);
     // Create config file and initiate factory reset if it doesn't exist or is
     // otherwise corrupted.

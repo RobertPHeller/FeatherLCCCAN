@@ -82,7 +82,8 @@ Adafruit_HX8357::~Adafruit_HX8357(void) {}
 
 // INIT DISPLAY ------------------------------------------------------------
 
-static const uint8_t PROGMEM
+
+static const uint8_t 
     initb[] =
         {
             HX8357B_SETPOWER,
@@ -277,14 +278,15 @@ static const uint8_t PROGMEM
              optimized value, e.g. 8 MHz on AVR, 12 MHz on M0.
     @return  None (void).
 */
+#define delay(ms) usleep((ms)*1000)
 void Adafruit_HX8357::begin(openmrn_arduino::Esp32SPI*spi) {
     
   initSPI(spi);
     
   const uint8_t *addr = (displayType == HX8357B) ? initb : initd;
   uint8_t cmd, x, numArgs;
-  while ((cmd = pgm_read_byte(addr++)) > 0) { // '0' command ends list
-    x = pgm_read_byte(addr++);
+  while ((cmd = *addr++) > 0) { // '0' command ends list
+    x = *addr++;
     numArgs = x & 0x7F;
     if (cmd != 0xFF) { // '255' is ignored
       if (x & 0x80) {  // If high bit set, numArgs is a delay time
@@ -366,11 +368,11 @@ void Adafruit_HX8357::invertDisplay(boolean invert) {
 void Adafruit_HX8357::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t w,
                                     uint16_t h) {
   uint16_t x2 = (x1 + w - 1), y2 = (y1 + h - 1);
-  writeCommand(HX8357_CASET); // Column address set
+  sendCommand(HX8357_CASET); // Column address set
   SPI_WRITE16(x1);
   SPI_WRITE16(x2);
-  writeCommand(HX8357_PASET); // Row address set
+  sendCommand(HX8357_PASET); // Row address set
   SPI_WRITE16(y1);
   SPI_WRITE16(y2);
-  writeCommand(HX8357_RAMWR); // Write to RAM
+  sendCommand(HX8357_RAMWR); // Write to RAM
 }

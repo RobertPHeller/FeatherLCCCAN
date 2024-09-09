@@ -31,6 +31,7 @@
 #ifndef _ADAFRUIT_HX8357_H
 #define _ADAFRUIT_HX8357_H
 
+typedef bool boolean;
 #include <Adafruit_SPITFT.h>
 #include <Esp32SPI.hxx>
 #include "freertos_drivers/esp32/Esp32Gpio.hxx"

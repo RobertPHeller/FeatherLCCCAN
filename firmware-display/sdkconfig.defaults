@@ -5,8 +5,8 @@ CONFIG_BOOTLOADER_LOG_LEVEL_NONE=y
 
 #
 # Serial flasher config
-#
-CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+# (using the 8Meg Adafruit Feather)
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
 
 #
 # Heap memory debugging

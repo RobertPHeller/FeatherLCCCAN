@@ -140,9 +140,8 @@ public:
 
   void invertDisplay(bool i);
   uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
-
 protected:
-    
+    void SPI_WRITE16(uint16_t data) {spiDev_->write16(data);}
     void SPI_WRITE32(uint32_t data) {spiDev_->write32(data);}
   // CLASS INSTANCE VARIABLES --------------------------------------------
 
