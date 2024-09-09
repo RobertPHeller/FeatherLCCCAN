@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 12:44:50 2024
-//  Last Modified : <240905.0958>
+//  Last Modified : <240909.0857>
 //
 //  Description	
 //
@@ -207,8 +207,7 @@ private:
                              openlcb::EventId event,
                              BarrierNotifiable *done);
         openlcb::Node *node_;
-        NetworkHealthScan *parent_;
-        
+        NetworkHealthScan *parent_;        
         openlcb::EventId scanOK_;
         openlcb::EventId scanMissing_;
         openlcb::EventId scanAdded_;
@@ -227,6 +226,10 @@ public:
           , consumer_(node,this,0,0)
           , producer_(node,this,0,0,0)
           , needWriteDB_(false)
+          , currentState_(Init)
+          , added_(0)
+          , missing_(0)
+          , found_(0)
     {
         ReadDB_();
     }
@@ -237,18 +240,25 @@ public:
                                              bool initial_load,
                                              BarrierNotifiable *done) override;
     virtual void factory_reset(int fd) override;
-private:
-    static constexpr const char NODEDB[] = "/fs/nodedb";
-    static constexpr const long long BROWSETIMEOUT = MSEC_TO_NSEC(20000);
-    friend class NetworkHealthConsumer;
-    void browseCallback_(openlcb::NodeID nodeid);
-    void resetNodeDB_();
+    void ResetNodeDB();
+    void ScanNetwork();
     typedef std::map<openlcb::NodeID,NetworkNodeDatabaseEntry> NodeDB_t;
+    typedef NodeDB_t::const_iterator NodeDB_ConstIterator;
+    NodeDB_ConstIterator NodeDB_Begin() const {return NodeDB_.begin();}
+    NodeDB_ConstIterator NodeDB_End() const {return NodeDB_.end();}
+    typedef enum {Init=0, Scanning, ScanComplete} ScanState_t;
+    ScanState_t CurrentState() const {return currentState_;}
+    size_t Total() const {return NodeDB_.size();}
+    size_t Added() const {return added_;}
+    size_t Missing() const {return missing_;}
+    size_t Found() const {return found_;}
+private:
+    static constexpr const char NODEDB[] = "/sdcard/nodedb";
+    static constexpr const long long BROWSETIMEOUT = MSEC_TO_NSEC(20000);
+    void browseCallback_(openlcb::NodeID nodeid);
     NodeDB_t NodeDB_;
     void ReadDB_();
     void WriteDB_();
-    typedef enum {OK=0, MISSING, ADDED} ScanStatus_t;
-    void scanNetwork_();
     long long timeout() override;
     openlcb::Node *node_;
     Service *service_;
@@ -260,6 +270,10 @@ private:
     BarrierNotifiable bn_;
     bool needWriteDB_;
     openlcb::WriteHelper write_helpers[3];
+    ScanState_t currentState_;
+    size_t added_;
+    size_t missing_;
+    size_t found_;
 };
           
           

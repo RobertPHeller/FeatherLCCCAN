@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <240905.1001>
+//  Last Modified : <240909.0844>
 //
 //  Description	
 //
@@ -97,11 +97,11 @@ void NetworkHealthScan::NetworkHealthConsumer::handle_event_report(const openlcb
 {
     if (event->event == scan_)
     {
-        parent_->scanNetwork_();
+        parent_->ScanNetwork();
     }
     else if (event->event == resetList_)
     {
-        parent_->resetNodeDB_();
+        parent_->ResetNodeDB();
     }
     done->notify();
 }
@@ -289,12 +289,12 @@ void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
 }
 
 
-void NetworkHealthScan::resetNodeDB_()
+void NetworkHealthScan::ResetNodeDB()
 {
     remove(NODEDB);
     NodeDB_.clear();
     needWriteDB_ = true;
-    scanNetwork_();
+    ScanNetwork();
 }
 
 static bool readline_to_string(int fd,string& buffer)
@@ -368,48 +368,48 @@ void NetworkHealthScan::WriteDB_()
     close(fd);
 }
 
-void NetworkHealthScan::scanNetwork_()
+void NetworkHealthScan::ScanNetwork()
 {
     for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
     {
         it->second.status = NetworkNodeDatabaseEntry::Missing;
     }
+    currentState_ = Scanning;
     browser_.refresh();
     start(BROWSETIMEOUT);
 }
 
 long long NetworkHealthScan::timeout()
 {
-    size_t total = 0;
-    size_t found = 0;
-    size_t missing = 0;
-    size_t added = 0;
+    currentState_ = ScanComplete;
+    found_ = 0;
+    missing_ = 0;
+    added_ = 0;
     for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
     {
-        total++;
         switch (it->second.status)
         {
         case NetworkNodeDatabaseEntry::Missing:
-            missing++;
+            missing_++;
             break;
         case NetworkNodeDatabaseEntry::Found:
-            found++;
+            found_++;
             break;
         case NetworkNodeDatabaseEntry::New:
-            added++;
+            added_++;
             break;
         }
     }
     bn_.reset(this);
-    if (found == total)
+    if (found_ == Total())
     {
         producer_.sendOK(&write_helpers[0],bn_.new_child());
     }
-    if (missing > 0)
+    if (missing_ > 0)
     {
         producer_.sendMissing(&write_helpers[1],bn_.new_child());
     }
-    if (added > 0)
+    if (added_ > 0)
     {
         producer_.sendAdded(&write_helpers[2],bn_.new_child());
     }
