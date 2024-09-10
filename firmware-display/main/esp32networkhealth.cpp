@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <240908.2049>
+//  Last Modified : <240909.0937>
 //
 //  Description	
 //
@@ -83,7 +83,7 @@ static const char rcsid[] = "@(#) : $Id$";
 #include "Adafruit_TSC2007.h"
 
 #include "NetworkHealthScan.hxx"
-
+#include "DisplayNetworkHealth.hxx"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Increase the CAN RX frame buffer size to reduce overruns when there is high
@@ -268,6 +268,9 @@ void app_main()
                      stack.service(),
                      stack.executor()->active_timers(),
                      cfg.seg().scanConfig());
+    DisplayNetworkHealth::DisplayNetworkHealth 
+          displayNetHealth(&display,&touchscreen,&healthScan);
+    openlcb::RefreshLoop loopdisplay(stack.node(),{&displayNetHealth});
     LOG(INFO, "[MAIN] config file size is %d",openlcb::CONFIG_FILE_SIZE);
     // Create config file and initiate factory reset if it doesn't exist or is
     // otherwise corrupted.
