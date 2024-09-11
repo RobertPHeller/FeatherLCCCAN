@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240910.2059>
+#  Last Modified : <240911.1333>
 #
 #  Description	
 #
@@ -256,7 +256,7 @@ class Box(object):
         innerFace=Part.Face(innerOutline)
         inner=innerFace.extrude(iextrude)
         box=box.cut(inner)
-        box=box.cut(self.feather.USB_Cutout(self.__USBCutY,self.__WallThick))
+        box=box.cut(self.feather.USB_Cutout(self.__USBCutY,self.__WallThick*2))
         box=self.featherLCCCAN.cutRJ45s(box)
         box=box.fuse(self.display.MakeStandoff(0,self.origin.x+1.6,\
                                                self.__InnerDepth,\
@@ -353,24 +353,22 @@ class Box(object):
         doc = App.newDocument("PrintBox")
         obj = doc.addObject("Part::Feature","temp")
         b = self.box.copy()
-        b = b.rotate(Base.Vector(0,0,0),Base.Vector(0,1,0),90)
-        obj.Shape=b
+        plm = Base.Placement(Base.Vector(), Base.Rotation(Base.Vector(0,1,0),90))
+        obj.Shape=b.transformShape(plm.toMatrix(), True)
         objs.append(obj)
-        Gui.activeDocument().activeView().viewTop()
-        Gui.SendMsgToActiveView("ViewFit")
         Mesh.export(objs,boxfilename)
+        App.closeDocument("PrintBox")
         if "PrintLid" in App.listDocuments().keys():
             App.closeDocument("PrintLid")
         doc = App.newDocument("PrintLid")
         objs=[]
         obj = doc.addObject("Part::Feature","temp")
         l = self.lid.copy()
-        l = l.rotate(Base.Vector(0,0,0),Base.Vector(0,1,0),-90)
-        obj.Shape=l
+        plm = Base.Placement(Base.Vector(), Base.Rotation(Base.Vector(0,1,0),-90))
+        obj.Shape=l.transformShape(plm.toMatrix(), True)
         objs.append(obj)
-        Gui.activeDocument().activeView().viewTop()
-        Gui.SendMsgToActiveView("ViewFit")
         Mesh.export(objs,lidfilename)
+        App.closeDocument("PrintLid")
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -378,12 +376,12 @@ class Box(object):
         obj.Shape = self.box
         obj.Label=self.name+'_box'
         obj.ViewObject.ShapeColor=tuple([1.0,0.0,0.0])
-        obj.ViewObject.Transparency=50
+        #obj.ViewObject.Transparency=50
         obj = doc.addObject("Part::Feature",self.name+'_lid')
         obj.Shape = self.lid
         obj.Label=self.name+'_lid'
         obj.ViewObject.ShapeColor=tuple([0.0,0.0,1.0])
-        obj.ViewObject.Transparency=50
+        #obj.ViewObject.Transparency=50
         self.display.show(doc)
         self.feather.show(doc)
         self.featherLCCCAN.show(doc)
