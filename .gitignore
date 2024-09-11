@@ -114,5 +114,4 @@ sdkconfig
 FeatherLCCCAN-backups/*
 rescue-backup/*
 
-FeatherLCCCAN.png
 sdkconfig.old

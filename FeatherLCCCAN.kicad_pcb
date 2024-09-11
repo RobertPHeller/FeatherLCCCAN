@@ -148,10 +148,15 @@
       (net 4 "GND") (pintype "passive") (tstamp 4a808b83-ae81-4eb0-9078-c419ddfc37f3))
     (pad "8" thru_hole circle (at 4.445 -8.89 90) (size 1.50114 1.50114) (drill 0.89916) (layers *.Cu *.Mask "F.SilkS")
       (net 35 "Net-(J301-Pad8)") (pintype "passive") (tstamp c8fa7f22-7e00-4f18-be28-3c7b32321f65))
-    (model "connectors/RJ45_8.wrl"
+    (model "connectors/RJ45_8.wrl" hide
       (offset (xyz 0 0 0))
       (scale (xyz 0.4 0.4 0.4))
       (rotate (xyz 0 0 0))
+    )
+    (model "/home/heller/ESP32-LCC/CommonFootprints/Connectors_RJ.3dshapes/615008144221.stp"
+      (offset (xyz 0 1.5 8))
+      (scale (xyz 1 1 1))
+      (rotate (xyz -90 0 0))
     )
   )
 
@@ -395,10 +400,10 @@
       (net 4 "GND") (pintype "passive") (tstamp 8682f38a-3f42-4004-97ed-2ce1df256a41))
     (pad "8" thru_hole circle (at 4.445 -8.89 90) (size 1.50114 1.50114) (drill 0.89916) (layers *.Cu *.Mask "F.SilkS")
       (net 35 "Net-(J301-Pad8)") (pintype "passive") (tstamp 44655160-c56a-44e8-b043-4c1e07d428f2))
-    (model "connectors/RJ45_8.wrl"
-      (offset (xyz 0 0 0))
-      (scale (xyz 0.4 0.4 0.4))
-      (rotate (xyz 0 0 0))
+    (model "/home/heller/ESP32-LCC/CommonFootprints/Connectors_RJ.3dshapes/615008144221.stp"
+      (offset (xyz 0 1.5 8))
+      (scale (xyz 1 1 1))
+      (rotate (xyz -90 0 0))
     )
   )
 
