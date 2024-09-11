@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240908.1547>
+#  Last Modified : <240910.2051>
 #
 #  Description	
 #
@@ -346,6 +346,29 @@ class Box(object):
         lid=lid.fuse(dip)
         self.box=self.box.cut(lid)
         self.lid=lid
+    def ExportSTLs(self,boxfilename,lidfilename):
+        objs=[]
+        if "PrintBox" in App.listDocuments().keys():
+            App.closeDocument("PrintBox")
+        doc = App.newDocument("PrintBox")
+        obj = doc.addObject("Part::Feature","temp")
+        b = self.box.copy()
+        b = b.rotate(Base.Vector(0,0,0),Base.Vector(0,1,0),90)
+        obj.Shape=b
+        objs.append(obj)
+        Gui.activeDocument().activeView().viewTop()
+        Gui.SendMsgToActiveView("ViewFit")
+        Mesh.export(objs,boxfilename)
+        if "PrintLid" in App.listDocuments().keys():
+            App.closeDocument("PrintLid")
+        doc = App.newDocument("PrintLid")
+        objs=[]
+        obj = doc.addObject("Part::Feature","temp")
+        obj.Shape=self.lid.copy().rotate(Base.Vector(0,0,0),Base.Vector(0,1,0),-90)
+        objs.append(obj)
+        Gui.activeDocument().activeView().viewTop()
+        Gui.SendMsgToActiveView("ViewFit")
+        Mesh.export(objs,lidfilename)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -372,3 +395,4 @@ if __name__ == '__main__':
     box.show(doc)
     Gui.activeDocument().activeView().viewRear()
     Gui.SendMsgToActiveView("ViewFit")
+    box.ExportSTLs("Box.stl","Lid.stl")
