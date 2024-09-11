@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Fri Sep 6 15:36:22 2024
-#  Last Modified : <240910.2051>
+#  Last Modified : <240910.2059>
 #
 #  Description	
 #
@@ -364,7 +364,9 @@ class Box(object):
         doc = App.newDocument("PrintLid")
         objs=[]
         obj = doc.addObject("Part::Feature","temp")
-        obj.Shape=self.lid.copy().rotate(Base.Vector(0,0,0),Base.Vector(0,1,0),-90)
+        l = self.lid.copy()
+        l = l.rotate(Base.Vector(0,0,0),Base.Vector(0,1,0),-90)
+        obj.Shape=l
         objs.append(obj)
         Gui.activeDocument().activeView().viewTop()
         Gui.SendMsgToActiveView("ViewFit")
