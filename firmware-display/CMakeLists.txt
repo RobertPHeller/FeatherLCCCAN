@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Tue Sep 3 16:42:29 2024
-#  Last Modified : <240906.1447>
+#  Last Modified : <241103.1418>
 #
 #  Description	
 #
@@ -92,13 +92,13 @@ if (NOT CONFIG_FREERTOS_HZ EQUAL 1000)
     message(FATAL_ERROR "FreeRTOS tick rate (hz) is required to be 1000.")
 endif()
 
-if (NOT CONFIG_PARTITION_TABLE_FILENAME STREQUAL "esp32networkhealth8meg-partitions.csv")
-    message(FATAL_ERROR "The custom partition table option is not enabled in menuconfig and is required for compilation.")
-endif()
+#if (NOT CONFIG_PARTITION_TABLE_FILENAME STREQUAL "esp32networkhealth8meg-partitions.csv")
+#    message(FATAL_ERROR "The custom partition table option is not enabled in menuconfig and is required for compilation.")
+#endif()
 
-if (NOT CONFIG_PARTITION_TABLE_CUSTOM_FILENAME STREQUAL "esp32networkhealth8meg-partitions.csv")
-    message(FATAL_ERROR "The custom partition table option is not enabled in menuconfig and is required for compilation.")
-endif()
+#if (NOT CONFIG_PARTITION_TABLE_CUSTOM_FILENAME STREQUAL "esp32networkhealth8meg-partitions.csv")
+#    message(FATAL_ERROR "The custom partition table option is not enabled in menuconfig and is required for compilation.")
+#endif()
 
 if (NOT CONFIG_PARTITION_TABLE_CUSTOM)
     message(FATAL_ERROR "The custom partition table option is not enabled in menuconfig and is required for compilation.")
