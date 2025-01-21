@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <240909.0844>
+//  Last Modified : <250120.2031>
 //
 //  Description	
 //
@@ -291,6 +291,8 @@ void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
 
 void NetworkHealthScan::ResetNodeDB()
 {
+    LOG(INFO, "[NetworkHealthScan] ResetNodeDB()");
+    if (currentState_ == Scanning) return;
     remove(NODEDB);
     NodeDB_.clear();
     needWriteDB_ = true;
@@ -370,6 +372,8 @@ void NetworkHealthScan::WriteDB_()
 
 void NetworkHealthScan::ScanNetwork()
 {
+    LOG(INFO, "[NetworkHealthScan] ScanNetwork()");
+    if (currentState_ == Scanning) return;
     for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
     {
         it->second.status = NetworkNodeDatabaseEntry::Missing;
@@ -381,6 +385,7 @@ void NetworkHealthScan::ScanNetwork()
 
 long long NetworkHealthScan::timeout()
 {
+    LOG(INFO, "[NetworkHealthScan] timeout()");
     currentState_ = ScanComplete;
     found_ = 0;
     missing_ = 0;
@@ -400,20 +405,25 @@ long long NetworkHealthScan::timeout()
             break;
         }
     }
+    LOG(INFO, "[NetworkHealthScan] timeout(): Total() = %d", Total());
     bn_.reset(this);
     if (found_ == Total())
     {
+        LOG(INFO, "[NetworkHealthScan] timeout(): found_ = %d", found_);
         producer_.sendOK(&write_helpers[0],bn_.new_child());
     }
     if (missing_ > 0)
     {
+        LOG(INFO, "[NetworkHealthScan] timeout(): missing_ = %d", missing_);
         producer_.sendMissing(&write_helpers[1],bn_.new_child());
     }
     if (added_ > 0)
     {
+        LOG(INFO, "[NetworkHealthScan] timeout(): added_ = %d", added_);
         producer_.sendAdded(&write_helpers[2],bn_.new_child());
     }
     bn_.maybe_done();
+    LOG(INFO, "[NetworkHealthScan] timeout(): needWriteDB_ = %d", needWriteDB_);
     if (needWriteDB_)
     {
         WriteDB_();

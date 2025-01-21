@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : Wed Sep 21 11:39:10 2022
-#  Last Modified : <240903.2238>
+#  Last Modified : <250120.1538>
 #
 #  Description	
 #
@@ -44,7 +44,7 @@
 
 PROJECTPATH=`(cd ../../../..;pwd)`
 
-all: ../include/cdidata.hxx
+all: ../include/cdidata.hxx ../include/Revision.hxxout
 
 ../include/cdidata.hxx : compile_cdi SNIPEDIT.sed
 	./compile_cdi |sed -f SNIPEDIT.sed >../include/cdidata.hxx

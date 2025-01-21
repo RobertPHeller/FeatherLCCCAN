@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Mon Sep 9 09:39:50 2024
-//  Last Modified : <240909.1520>
+//  Last Modified : <250120.2015>
 //
 //  Description	
 //
@@ -166,7 +166,10 @@ void DisplayNetworkHealth::processButons_()
     if (rescan_.justReleased())
     {
         rescan_.drawButton(false);
-        healthScan_->ScanNetwork();
+        if (healthScan_->CurrentState() != NetworkHealthScan::Scanning) 
+        {
+            healthScan_->ScanNetwork();
+        }
     }
     if (rescan_.justPressed())
     {
