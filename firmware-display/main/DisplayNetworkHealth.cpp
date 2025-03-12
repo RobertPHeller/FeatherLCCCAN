@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Mon Sep 9 09:39:50 2024
-//  Last Modified : <250120.2015>
+//  Last Modified : <250121.1347>
 //
 //  Description	
 //
@@ -95,7 +95,9 @@ void DisplayNetworkHealth::poll_33hz(openlcb::WriteHelper *helper,
 
 void DisplayNetworkHealth::refreshDisplay_()
 {
+    LOG(INFO,"[DisplayNetworkHealth] refreshDisplay_");
     display_->fillScreen(HX8357_BLACK);
+    return;
     redrawHeading_();
     nodelist_.RedrawList(healthScan_->NodeDB_Begin(),
                          healthScan_->NodeDB_End());

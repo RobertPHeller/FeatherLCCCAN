@@ -631,8 +631,7 @@ void Adafruit_SPITFT::sendCommand(uint8_t commandByte, const uint8_t *dataBytes,
     dc_->clr();
 
     for (int i = 0; i < numDataBytes; i++) {
-        spiDev_->write16(*(uint16_t *)dataBytes,i+2 < numDataBytes);
-        dataBytes += 2;
+        spiDev_->write(*dataBytes++,true);
     }
     spiDev_->Release();
 }

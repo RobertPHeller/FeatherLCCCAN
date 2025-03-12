@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sun Jan 15 16:13:22 2023
-//  Last Modified : <240908.2026>
+//  Last Modified : <250120.2128>
 //
 //  Description	
 //
@@ -67,6 +67,11 @@ static constexpr gpio_num_t CONFIG_TWAI_RX_PIN = GPIO_NUM_12;
 
 /// GPIO Pin connected to the TWAI (CAN) Transceiver TX pin.
 static constexpr gpio_num_t CONFIG_TWAI_TX_PIN = GPIO_NUM_11;
+
+/// GPIO Pin connected to SDA
+static constexpr gpio_num_t CONFIG_SDA_PIN = GPIO_NUM_3;
+/// GPIO Pin connected to SDL
+static constexpr gpio_num_t CONFIG_SDL_PIN = GPIO_NUM_4;
 
 // Create an initializer that can initialize all the GPIO pins in one shot
 typedef GpioInitializer<DRs_Pin, TSC_IRQ_Pin> GpioInit;

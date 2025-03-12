@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 12:44:50 2024
-//  Last Modified : <240909.0857>
+//  Last Modified : <250312.1305>
 //
 //  Description	
 //
@@ -236,6 +236,7 @@ public:
     ~NetworkHealthScan() 
     {
     }
+    virtual void notify() override {} // empty norify for now.
     virtual UpdateAction apply_configuration(int fd,
                                              bool initial_load,
                                              BarrierNotifiable *done) override;

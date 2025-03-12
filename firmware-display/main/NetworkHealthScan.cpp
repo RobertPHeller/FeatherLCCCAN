@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <250120.2031>
+//  Last Modified : <250312.1312>
 //
 //  Description	
 //
@@ -219,9 +219,13 @@ void NetworkHealthScan::factory_reset(int fd)
 
 void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
 {
+    LOG(INFO,"[NetworkHealthScan] browseCallback_(0x%06llX)",nodeid);
+    LOG(INFO,"[NetworkHealthScan] browseCallback_(), currentState_ is %d",currentState_);
     auto found = NodeDB_.find(nodeid);
     if (found == NodeDB_.end())
     {
+        LOG(INFO,"[NetworkHealthScan] browseCallback_(): found == NodeDB_.end()");
+        return;
         auto request = invoke_flow(&snipClient_,node_,openlcb::NodeHandle(nodeid));
         string manufacturer("");
         string model("");
@@ -231,6 +235,7 @@ void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
         string description("");
         size_t index = 0;
         openlcb::Payload p = request->data()->response;
+        LOG(INFO,"[NetworkHealthScan] browseCallback_(): p = %s",p.c_str());
         uint8_t version = p[index++];
         for (size_t i=0; i<version; i++)
         {
@@ -284,6 +289,7 @@ void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
     }
     else
     {
+        LOG(INFO,"[NetworkHealthScan] browseCallback_(): found != NodeDB_.end()");
         found->second.status = NetworkNodeDatabaseEntry::Found;
     }
 }
