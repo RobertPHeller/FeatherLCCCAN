@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 12:44:50 2024
-//  Last Modified : <250314.1123>
+//  Last Modified : <250314.1457>
 //
 //  Description	
 //
@@ -220,9 +220,7 @@ public:
           , node_(node)
           , service_(service)
           , cfg_(cfg)
-          , browser_(node, std::bind(&NetworkHealthScan::browseCallback_,
-                                     this,std::placeholders::_1))
-          , snipProcess_(service, this)
+          , browsehandleflow_(node,service,this)
           , consumer_(node,this,0,0)
           , producer_(node,this,0,0,0)
           , needWriteDB_(false)
@@ -245,8 +243,10 @@ public:
     void ScanNetwork();
     typedef std::map<openlcb::NodeID,NetworkNodeDatabaseEntry> NodeDB_t;
     typedef NodeDB_t::const_iterator NodeDB_ConstIterator;
+    typedef NodeDB_t::iterator NodeDB_Iterator;
     NodeDB_ConstIterator NodeDB_Begin() const {return NodeDB_.begin();}
     NodeDB_ConstIterator NodeDB_End() const {return NodeDB_.end();}
+    NodeDB_Iterator NodeDB_Find(openlcb::NodeID nodeid) {return NodeDB_.find(nodeid);}
     typedef enum {Init=0, Scanning, ScanComplete} ScanState_t;
     ScanState_t CurrentState() const {return currentState_;}
     size_t Total() const {return NodeDB_.size();}
@@ -260,7 +260,6 @@ public:
 private:
     static constexpr const char NODEDB[] = "/sdcard/nodedb";
     static constexpr const long long BROWSETIMEOUT = MSEC_TO_NSEC(20000);
-    void browseCallback_(openlcb::NodeID nodeid);
     NodeDB_t NodeDB_;
     void ReadDB_();
     void WriteDB_();
@@ -268,80 +267,124 @@ private:
     openlcb::Node *node_;
     Service *service_;
     const NetworkHealthScanConfig cfg_;
-    openlcb::NodeBrowser browser_;
-    struct GetSNIP {
-        openlcb::Node *src;
-        openlcb::NodeHandle dst;
-        void reset(openlcb::Node *src, openlcb::NodeHandle dst)
-        {
-            this->src = src;
-            this->dst = dst;
-        }
-    };
-    typedef StateFlow<Buffer<GetSNIP>, QList<1>> SNIPProcessBase;
-    class SNIPProcess : public SNIPProcessBase
+    class BrowseHandleFlow : public StateFlowBase
     {
     public:
-        SNIPProcess(Service *service, NetworkHealthScan *parent)
-                    : SNIPProcessBase(service)
-              , client_(service)
+        BrowseHandleFlow(openlcb::Node *node, Service *service,
+                         NetworkHealthScan *parent)
+                    : StateFlowBase(service)
+              , node_(node)
               , parent_(parent)
-              , buffer_(nullptr)
+              , busy_(false)
+              , browser_(node, std::bind(&BrowseHandleFlow::browseCallback_, 
+                                         this,std::placeholders::_1))
+              , snipProcess_(service, parent, &busy_)
         {
+            start_flow(STATE(entry));
         }
-        virtual ~SNIPProcess()
-        {
-        }
-#if 0
         virtual void notify() override
         {
-            LOG(INFO,"[NetworkHealthScan] SNIPProcess::notify()");
-            SNIPProcessBase::notify();
+            LOG(INFO,"[BrowseHandleFlow] notify()");
+            StateFlowBase::notify();
         }
-#endif
+        void refresh() {browser_.refresh();}
     private:
-        openlcb::SNIPClient client_;
+        void browseCallback_(openlcb::NodeID nodeid);
+        openlcb::Node *node_;
         NetworkHealthScan *parent_;
-        Buffer<openlcb::SNIPClientRequest> *buffer_;
+        bool busy_;
+        openlcb::NodeBrowser browser_;
+        struct PendingNodeID : public QMember
+        {
+            PendingNodeID(openlcb::NodeID nodeid)
+            {
+                this->nodeid = nodeid;
+            }
+            openlcb::NodeID nodeid;
+        };
+        Q pendingNodeIDs_;
+        struct GetSNIP {
+            openlcb::Node *src;
+            openlcb::NodeHandle dst;
+            void reset(openlcb::Node *src, openlcb::NodeHandle dst)
+            {
+                this->src = src;
+                this->dst = dst;
+            }
+        };
+        typedef StateFlow<Buffer<GetSNIP>, QList<1>> SNIPProcessBase;
+        class SNIPProcess : public SNIPProcessBase
+        {
+        public:
+            SNIPProcess(Service *service, NetworkHealthScan *parent, 
+                        bool *busy)
+                        : SNIPProcessBase(service)
+                  , client_(service)
+                  , parent_(parent)
+                  , busy_(busy)
+                  , buffer_(nullptr)
+            {
+            }
+            virtual ~SNIPProcess()
+            {
+            }
+#if 0
+            virtual void notify() override
+            {
+                LOG(INFO,"[NetworkHealthScan] SNIPProcess::notify()");
+                SNIPProcessBase::notify();
+            }
+#endif
+        private:
+            openlcb::SNIPClient client_;
+            NetworkHealthScan *parent_;
+            bool *busy_;
+            Buffer<openlcb::SNIPClientRequest> *buffer_;
+            virtual Action entry();
+            Action startSNIP();
+            Action gotSNIP();
+        };
+        class SNIPHelper : public Executable
+        {
+        public:
+            SNIPHelper()
+            {
+            }
+            void SNIPAsync(SNIPProcess *flow,openlcb::Node *src, 
+                           openlcb::NodeHandle dst, Notifiable *done)
+            {
+                LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow::SNIPHelper] SNIPAsync()");
+                done_.reset(done);
+                src_ = src;
+                dst_ = dst;
+                flow_ = flow;
+                flow_->alloc_async(this);
+            }
+        private:
+            SNIPProcess *flow_;
+            openlcb::Node *src_;
+            openlcb::NodeHandle dst_;
+            // Callback from the allocator.
+            void alloc_result(QMember *entry) override
+            {
+                LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow::SNIPHelper] alloc_result()");
+                Buffer<GetSNIP> *b = flow_->cast_alloc(entry);
+                b->data()->reset(src_,dst_);
+                b->set_done(&done_);
+                flow_->send(b);
+            }
+            void run() override
+            {
+                HASSERT(0);
+            }
+            BarrierNotifiable done_;
+        };
+        SNIPProcess snipProcess_;
+        SNIPHelper snipHelper;
         virtual Action entry();
-        Action startSNIP();
         Action gotSNIP();
     };
-    class SNIPHelper : public Executable
-    {
-    public:
-        SNIPHelper()
-        {
-        }
-        void SNIPAsync(SNIPProcess *flow,openlcb::Node *src, 
-                       openlcb::NodeHandle dst, Notifiable *done)
-        {
-            done_.reset(done);
-            src_ = src;
-            dst_ = dst;
-            flow_ = flow;
-            flow_->alloc_async(this);
-        }
-    private:
-        SNIPProcess *flow_;
-        openlcb::Node *src_;
-        openlcb::NodeHandle dst_;
-        // Callback from the allocator.
-        void alloc_result(QMember *entry) override
-        {
-            Buffer<GetSNIP> *b = flow_->cast_alloc(entry);
-            b->data()->reset(src_,dst_);
-            b->set_done(&done_);
-            flow_->send(b);
-        }
-        void run() override
-        {
-            HASSERT(0);
-        }
-        BarrierNotifiable done_;
-    };
-    SNIPProcess snipProcess_;
-    SNIPHelper snipHelper;
+    BrowseHandleFlow browsehandleflow_;
     NetworkHealthConsumer consumer_;
     NetworkHealthProducer producer_;
     BarrierNotifiable bn_;

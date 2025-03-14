@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <250314.1205>
+//  Last Modified : <250314.1620>
 //
 //  Description	
 //
@@ -61,6 +61,10 @@ static const char rcsid[] = "@(#) : $Id$";
 #include <string>
 #include "NetworkHealthScanConfig.hxx"
 #include "NetworkHealthScan.hxx"
+#include "hardware.hxx"
+#include "Esp32SPI.hxx"
+extern Esp32SPI spibus;
+extern Esp32SPI::SpiDevice *sdcard;
 
 namespace NetworkHealthScan
 {
@@ -217,18 +221,66 @@ void NetworkHealthScan::factory_reset(int fd)
 {
 }
 
-void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
+StateFlowBase::Action NetworkHealthScan::BrowseHandleFlow::entry()
 {
-    LOG(INFO,"[NetworkHealthScan] browseCallback_(0x%012llX)",nodeid);
-    LOG(INFO,"[NetworkHealthScan] browseCallback_(), currentState_ is %d",currentState_);
-    auto found = NodeDB_.find(nodeid);
-    if (found == NodeDB_.end())
+    LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] entry()");
+    if (!pendingNodeIDs_.empty())
     {
-        LOG(INFO,"[NetworkHealthScan] browseCallback_(): found == NodeDB_.end()");
+        PendingNodeID *temp = (PendingNodeID*) (pendingNodeIDs_.next().item);
+        LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] entry(): temp = %p",temp);
+        openlcb::NodeID nodeid = temp->nodeid;
+        delete temp;
+        LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] entry(): pendingNodeIDs_ contains %d items",pendingNodeIDs_.pending());
+        auto found = parent_->NodeDB_Find(nodeid);
+        if (found == parent_->NodeDB_End())
+        {
+            snipHelper.SNIPAsync(&snipProcess_,node_,openlcb::NodeHandle(nodeid),
+                                 this);
+            busy_ = true;
+            return wait_and_call(STATE(gotSNIP));
+        }
+        else
+        {
+            return again();
+        }
+    }
+    else
+    {
+        return wait();
+    }
+}
+
+StateFlowBase::Action NetworkHealthScan::BrowseHandleFlow::gotSNIP()
+{
+    LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] gotSNIP()]");
+    if (busy_) return wait();
+    if (pendingNodeIDs_.empty())
+    {
+        return wait_and_call(STATE(entry));
+    }
+    else
+    {
+        return call_immediately(STATE(entry));
+    }
+}
+
+void NetworkHealthScan::BrowseHandleFlow::browseCallback_(openlcb::NodeID nodeid)
+{
+    LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] browseCallback_(0x%012llX)",nodeid);
+    //LOG(INFO,"[NetworkHealthScan] browseCallback_(), currentState_ is %d",currentState_);
+    auto found = parent_->NodeDB_Find(nodeid);
+    if (found == parent_->NodeDB_End())
+    {
+        LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] browseCallback_(): found == NodeDB_.end()");
         //SyncNotifiable n;
-        snipHelper.SNIPAsync(&snipProcess_,node_,openlcb::NodeHandle(nodeid),
-                             this);
+        //snipHelper.SNIPAsync(&snipProcess_,node_,openlcb::NodeHandle(nodeid),
+        //                     this);
         //n.wait_for_notification();
+        QMember *newitem = new PendingNodeID(nodeid);
+        LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] browseCallback_(): newitem is %p",newitem);
+        pendingNodeIDs_.insert(newitem);
+        LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow] browseCallback_(): pendingNodeIDs_ countains %d elements",pendingNodeIDs_.pending());
+        if (!busy_) notify();
     }
     else
     {
@@ -294,10 +346,12 @@ void NetworkHealthScan::ReadDB_()
     close(fd);
 }
 
+
 void NetworkHealthScan::WriteDB_()
 {
     remove(NODEDB);
     int fd = open(NODEDB,O_CREAT|O_WRONLY);
+    LOG(INFO,"[NetworkHealthScan] WriteDB_(): fd = %d",fd);
     for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
     {
         string nodeidstring = utils::node_id_to_string(it->second.node_id);
@@ -317,6 +371,8 @@ void NetworkHealthScan::WriteDB_()
         write(fd,"\n",1);
     }
     close(fd);
+    spibus.unmount_sd_card(sdcard);
+    sdcard = spibus.mount_sd_card("/sdcard",CONFIG_CardCS);
 }
 
 void NetworkHealthScan::ScanNetwork()
@@ -328,7 +384,7 @@ void NetworkHealthScan::ScanNetwork()
         it->second.status = NetworkNodeDatabaseEntry::Missing;
     }
     currentState_ = Scanning;
-    browser_.refresh();
+    browsehandleflow_.refresh();
     start(BROWSETIMEOUT);
 }
 
@@ -381,15 +437,15 @@ long long NetworkHealthScan::timeout()
     return NONE;
 }
 
-StateFlowBase::Action NetworkHealthScan::SNIPProcess::entry()
+StateFlowBase::Action NetworkHealthScan::BrowseHandleFlow::SNIPProcess::entry()
 {
-    LOG(INFO,"[NetworkHealthScan::SNIPProcess::entry()]");
+    LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow::SNIPProcess::entry()]");
     return allocate_and_call(&client_,STATE(startSNIP));
 }
 
-StateFlowBase::Action NetworkHealthScan::SNIPProcess::startSNIP()
+StateFlowBase::Action NetworkHealthScan::BrowseHandleFlow::SNIPProcess::startSNIP()
 {
-    LOG(INFO,"[NetworkHealthScan::SNIPProcess::startSNIP()]");
+    LOG(INFO,"[NetworkHealthScan::BrowseHandleFlow::SNIPProcess::startSNIP()]");
     buffer_ = get_allocation_result(&client_);
     GetSNIP *m = message()->data();
     buffer_->data()->reset(m->src,m->dst);
@@ -398,7 +454,7 @@ StateFlowBase::Action NetworkHealthScan::SNIPProcess::startSNIP()
     return wait_and_call(STATE(gotSNIP));
 }
 
-StateFlowBase::Action NetworkHealthScan::SNIPProcess::gotSNIP()
+StateFlowBase::Action NetworkHealthScan::BrowseHandleFlow::SNIPProcess::gotSNIP()
 {
     string manufacturer("");
     string model("");
@@ -465,6 +521,7 @@ StateFlowBase::Action NetworkHealthScan::SNIPProcess::gotSNIP()
 
     buffer_->unref();
     buffer_ = nullptr;
+    *busy_ = false;
     return release_and_exit();
 }
 

@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <250314.1155>
+//  Last Modified : <250314.1611>
 //
 //  Description	
 //
@@ -95,6 +95,7 @@ OVERRIDE_CONST(num_memory_spaces, 6);
 esp32networkhealth::ConfigDef cfg(0);
 Esp32HardwareTwai twai(CONFIG_TWAI_RX_PIN, CONFIG_TWAI_TX_PIN);
 Esp32SPI spibus;
+Esp32SPI::SpiDevice *sdcard;
 Adafruit_HX8357 display(CONFIG_DCS,DRs_Pin::instance(),nullptr);
 Esp32HardwareI2C i2c("/dev/i2c");
 Adafruit_TSC2007 touchscreen;
@@ -213,7 +214,7 @@ void app_main()
     display.begin(&spibus);
     i2c.hw_init(CONFIG_SDA_PIN,CONFIG_SDL_PIN, 100000);
     touchscreen.begin();
-    spibus.mount_sd_card("/sdcard",CONFIG_CardCS);
+    sdcard = spibus.mount_sd_card("/sdcard",CONFIG_CardCS);
     
     nvsmanager::NvsManager nvs;
     nvs.init(reset_reason);
@@ -269,9 +270,9 @@ void app_main()
                      stack.service(),
                      stack.executor()->active_timers(),
                      cfg.seg().scanConfig());
-    //DisplayNetworkHealth::DisplayNetworkHealth 
-    //      displayNetHealth(&display,&touchscreen,&healthScan);
-    //openlcb::RefreshLoop loopdisplay(stack.node(),{&displayNetHealth});
+    DisplayNetworkHealth::DisplayNetworkHealth 
+          displayNetHealth(&display,&touchscreen,&healthScan);
+    openlcb::RefreshLoop loopdisplay(stack.node(),{&displayNetHealth});
     LOG(INFO, "[MAIN] config file size is %d",openlcb::CONFIG_FILE_SIZE);
     // Create config file and initiate factory reset if it doesn't exist or is
     // otherwise corrupted.
