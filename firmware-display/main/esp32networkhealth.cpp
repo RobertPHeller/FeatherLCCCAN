@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <250314.1611>
+//  Last Modified : <250314.1708>
 //
 //  Description	
 //
@@ -90,7 +90,7 @@ static const char rcsid[] = "@(#) : $Id$";
 // traffic load (ie: large datagram transport).
 ///////////////////////////////////////////////////////////////////////////////
 OVERRIDE_CONST(can_rx_buffer_size, 64);
-OVERRIDE_CONST(num_memory_spaces, 6);
+OVERRIDE_CONST(num_memory_spaces, 8);
 
 esp32networkhealth::ConfigDef cfg(0);
 Esp32HardwareTwai twai(CONFIG_TWAI_RX_PIN, CONFIG_TWAI_TX_PIN);
@@ -270,6 +270,10 @@ void app_main()
                      stack.service(),
                      stack.executor()->active_timers(),
                      cfg.seg().scanConfig());
+    openlcb::MemorySpace *space = healthScan.NodeDBSpace();
+    stack.memory_config_handler()->registry()->insert(stack.node(),
+                                                      CONFIG_NodeDB_SPACE,
+                                                      space);
     DisplayNetworkHealth::DisplayNetworkHealth 
           displayNetHealth(&display,&touchscreen,&healthScan);
     openlcb::RefreshLoop loopdisplay(stack.node(),{&displayNetHealth});

@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <250314.1620>
+//  Last Modified : <250314.1730>
 //
 //  Description	
 //
@@ -350,8 +350,11 @@ void NetworkHealthScan::ReadDB_()
 void NetworkHealthScan::WriteDB_()
 {
     remove(NODEDB);
-    int fd = open(NODEDB,O_CREAT|O_WRONLY);
-    LOG(INFO,"[NetworkHealthScan] WriteDB_(): fd = %d",fd);
+    
+    int fd = creat(NODEDB,0777);
+    int err = errno;
+    LOG(INFO,"[NetworkHealthScan] WriteDB_(): fd = %d, err is %d",fd,err);
+    LOG(INFO,"[NetworkHealthScan] WriteDB_(): NODEDB is '%s'",NODEDB);
     for (auto it = NodeDB_.begin(); it != NodeDB_.end(); it++)
     {
         string nodeidstring = utils::node_id_to_string(it->second.node_id);

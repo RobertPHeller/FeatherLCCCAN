@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 12:44:50 2024
-//  Last Modified : <250314.1457>
+//  Last Modified : <250314.1737>
 //
 //  Description	
 //
@@ -230,6 +230,10 @@ public:
           , found_(0)
     {
         ReadDB_();
+    }
+    openlcb::MemorySpace *NodeDBSpace()
+    {
+        return new openlcb::ROFileMemorySpace(NODEDB);
     }
     ~NetworkHealthScan() 
     {

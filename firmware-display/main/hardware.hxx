@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sun Jan 15 16:13:22 2023
-//  Last Modified : <250120.2128>
+//  Last Modified : <250314.1701>
 //
 //  Description	
 //
@@ -72,6 +72,8 @@ static constexpr gpio_num_t CONFIG_TWAI_TX_PIN = GPIO_NUM_11;
 static constexpr gpio_num_t CONFIG_SDA_PIN = GPIO_NUM_3;
 /// GPIO Pin connected to SDL
 static constexpr gpio_num_t CONFIG_SDL_PIN = GPIO_NUM_4;
+
+#define CONFIG_NodeDB_SPACE 0xA0
 
 // Create an initializer that can initialize all the GPIO pins in one shot
 typedef GpioInitializer<DRs_Pin, TSC_IRQ_Pin> GpioInit;
