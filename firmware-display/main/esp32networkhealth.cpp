@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Tue Sep 3 22:18:49 2024
-//  Last Modified : <250312.1139>
+//  Last Modified : <250314.1155>
 //
 //  Description	
 //
@@ -298,7 +298,7 @@ void app_main()
     
     // Add the TWAI port to the stack.
     stack.add_can_port_select("/dev/twai/twai0");
-    //healthScan.ScanNetwork();
+    healthScan.ScanNetwork();
     // Start the stack in the background using it's own task.
     stack.loop_executor();
     // At this point the OpenMRN stack is running in it's own task and we can

@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Wed Sep 4 14:31:24 2024
-//  Last Modified : <250312.1312>
+//  Last Modified : <250314.1205>
 //
 //  Description	
 //
@@ -219,73 +219,16 @@ void NetworkHealthScan::factory_reset(int fd)
 
 void NetworkHealthScan::browseCallback_(openlcb::NodeID nodeid)
 {
-    LOG(INFO,"[NetworkHealthScan] browseCallback_(0x%06llX)",nodeid);
+    LOG(INFO,"[NetworkHealthScan] browseCallback_(0x%012llX)",nodeid);
     LOG(INFO,"[NetworkHealthScan] browseCallback_(), currentState_ is %d",currentState_);
     auto found = NodeDB_.find(nodeid);
     if (found == NodeDB_.end())
     {
         LOG(INFO,"[NetworkHealthScan] browseCallback_(): found == NodeDB_.end()");
-        return;
-        auto request = invoke_flow(&snipClient_,node_,openlcb::NodeHandle(nodeid));
-        string manufacturer("");
-        string model("");
-        string softwareVersion("");
-        string hardwareVersion("");
-        string name("");
-        string description("");
-        size_t index = 0;
-        openlcb::Payload p = request->data()->response;
-        LOG(INFO,"[NetworkHealthScan] browseCallback_(): p = %s",p.c_str());
-        uint8_t version = p[index++];
-        for (size_t i=0; i<version; i++)
-        {
-            char c = p[index++];
-            while (c != '\0')
-            {
-                switch (i)
-                {
-                case 0:
-                    manufacturer += c;
-                    break;
-                case 1:
-                    model += c;
-                    break;
-                case 2:
-                    softwareVersion += c;
-                    break;
-                case 3:
-                    hardwareVersion += c;
-                    break;
-                }
-                c = p[index++];
-            }
-        }
-        version = p[index++];
-        for (size_t i=0; i<version; i++)
-        {
-            char c = p[index++];
-            while (c != '\0')
-            {
-                switch (i)
-                {
-                case 0:
-                    name += c;
-                    break;
-                case 1:
-                    description += c;
-                    break;
-                }
-                c = p[index++];
-            }
-        }
-        NodeDB_.insert(
-            std::make_pair(
-                 nodeid,
-                 NetworkNodeDatabaseEntry(nodeid,manufacturer,
-                                          model,softwareVersion,
-                                          hardwareVersion,name,
-                                          description,
-                                          NetworkNodeDatabaseEntry::New)));
+        //SyncNotifiable n;
+        snipHelper.SNIPAsync(&snipProcess_,node_,openlcb::NodeHandle(nodeid),
+                             this);
+        //n.wait_for_notification();
     }
     else
     {
@@ -436,6 +379,93 @@ long long NetworkHealthScan::timeout()
         needWriteDB_ = false;
     }
     return NONE;
+}
+
+StateFlowBase::Action NetworkHealthScan::SNIPProcess::entry()
+{
+    LOG(INFO,"[NetworkHealthScan::SNIPProcess::entry()]");
+    return allocate_and_call(&client_,STATE(startSNIP));
+}
+
+StateFlowBase::Action NetworkHealthScan::SNIPProcess::startSNIP()
+{
+    LOG(INFO,"[NetworkHealthScan::SNIPProcess::startSNIP()]");
+    buffer_ = get_allocation_result(&client_);
+    GetSNIP *m = message()->data();
+    buffer_->data()->reset(m->src,m->dst);
+    buffer_->data()->done.reset(this);
+    client_.send(buffer_);
+    return wait_and_call(STATE(gotSNIP));
+}
+
+StateFlowBase::Action NetworkHealthScan::SNIPProcess::gotSNIP()
+{
+    string manufacturer("");
+    string model("");
+    string softwareVersion("");
+    string hardwareVersion("");
+    string name("");
+    string description("");
+    size_t index = 0;
+    GetSNIP *m = message()->data();
+    LOG(INFO,"[NetworkHealthScan] SNIPProcess::gotSNIP(): buffer_->data()->resultCode is %d",buffer_->data()->resultCode);
+    openlcb::Payload p = buffer_->data()->response;
+    LOG(INFO,"[NetworkHealthScan] SNIPProcess::gotSNIP(): p = %s",p.c_str());
+    uint8_t version = p[index++];
+    for (size_t i=0; i<version; i++)
+    {
+        char c = p[index++];
+        while (c != '\0')
+        {
+            switch (i)
+            {
+            case 0:
+                manufacturer += c;
+                break;
+            case 1:
+                model += c;
+                break;
+            case 2:
+                softwareVersion += c;
+                break;
+            case 3:
+                hardwareVersion += c;
+                break;
+            }
+            c = p[index++];
+        }
+    }
+    version = p[index++];
+    LOG(INFO,"[NetworkHealthScan] SNIPProcess::gotSNIP(): version = %d",version);
+    for (size_t i=0; i<version; i++)
+    {
+        char c = p[index++];
+        while (c != '\0')
+        {
+            switch (i)
+            {
+            case 0:
+                name += c;
+                break;
+            case 1:
+                description += c;
+                break;
+            }
+            c = p[index++];
+        }
+    }
+    LOG(INFO,"[NetworkHealthScan] SNIPProcess::gotSNIP(): 0X%012llX: manufacturer is '%s', model = '%s', softwareVersion = '%s', hardwareVersion = '%s', name = '%s', description = '%s'",m->dst.id,manufacturer.c_str(),model.c_str(),softwareVersion.c_str(),hardwareVersion.c_str(),name.c_str(),description.c_str());
+    parent_->insertDB(m->dst.id,
+                      NetworkNodeDatabaseEntry(m->dst.id,manufacturer,
+                                               model,softwareVersion,
+                                               hardwareVersion,name,
+                                               description,
+                                               NetworkNodeDatabaseEntry::New));
+    
+
+    buffer_->unref();
+    buffer_ = nullptr;
+    return release_and_exit();
 }
 
 }
