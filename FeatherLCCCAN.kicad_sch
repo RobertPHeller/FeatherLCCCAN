@@ -1152,7 +1152,7 @@
     (property "LCSC" "C73651" (id 5) (at 104.14 86.36 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "MPN" "TCAN332DR" (id 6) (at 104.14 86.36 0)
+    (property "MPN" "Texas Instruments TCAN332DR" (id 6) (at 104.14 86.36 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (pin "1" (uuid d7b67c11-d515-46cf-bcf0-0f0ef2d0158a))
