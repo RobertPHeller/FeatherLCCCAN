@@ -435,7 +435,7 @@
     (descr "SOIC, 8 Pin (JEDEC MS-012AA, https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/soic_narrow-r/r_8.pdf), generated with kicad-footprint-generator ipc_gullwing_generator.py")
     (tags "SOIC SO")
     (property "LCSC" "C73651")
-    (property "MPN" "TCAN332DR")
+    (property "MPN" "Texas Instruments TCAN332DR")
     (property "Mouser Part Number" "595-TCAN332DR")
     (property "Sheetfile" "FeatherLCCCAN.kicad_sch")
     (property "Sheetname" "")
